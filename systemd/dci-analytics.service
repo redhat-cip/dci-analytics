@@ -1,0 +1,9 @@
+[Unit]
+Description=DCI-Analytics synchronization service
+After=network.target
+
+[Service]
+Type=simple
+User=dci
+Group=dci
+ExecStart=/usr/bin/curl http://127.0.0.1:2345/sync
