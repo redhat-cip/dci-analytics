@@ -6,6 +6,7 @@ LABEL maintainer="DCI Team <distributed-ci@redhat.com>"
 ENV LANG en_US.UTF-8
 
 RUN mkdir /opt/dci-analytics
+ADD . /opt/dci-analytics/
 WORKDIR /opt/dci-analytics
 
 COPY requirements.txt /tmp/requirements.txt

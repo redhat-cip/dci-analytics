@@ -1,0 +1,391 @@
+{
+    "took":1,
+    "timed_out":false,
+    "_shards":{
+       "total":1,
+       "successful":1,
+       "skipped":0,
+       "failed":0
+    },
+    "hits":{
+       "total":{
+          "value":2,
+          "relation":"eq"
+       },
+       "max_score":1.0,
+       "hits":[
+          {
+             "_index":"tasks_duration_cumulated",
+             "_type":"_doc",
+             "_id":"81f71c4b-62b6-415a-b406-17a58f8d6ada",
+             "_score":1.0,
+             "_source":{
+                "job_id":"81f71c4b-62b6-415a-b406-17a58f8d6ada",
+                "created_at":"2021-09-29T15:41:17.173600",
+                "topic_id":"8728c241-eb90-47eb-b080-b957bd2d818e",
+                "remoteci_id":"207e6a77-7a50-49b1-82b1-64c07f42e68a",
+                "data":[
+                   {
+                      "name":"PLAYBOOK: agent.yml",
+                      "duration":0
+                   },
+                   {
+                      "name":"PLAY [Schedule a job]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [Read credentials from env vars]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [Pause for 5 minutes to build app cache]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [validate environment variables]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [stat the tmpdir environment variable]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [Pause for 5 minutes to build app cache]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [check the existence of the temporary directory]",
+                      "duration":0
+                   },
+                   {
+                      "name":"skipped/TASK [Schedule a new job]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [Pause for 5 minutes to build app cache]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [Print job_info]",
+                      "duration":0
+                   },
+                   {
+                      "name":"TASK [Set global variables]",
+                      "duration":4
+                   },
+                   {
+                      "name":"TASK [Pause for 5 minutes to build app cache]",
+                      "duration":4
+                   },
+                   {
+                      "name":"TASK [set job state]",
+                      "duration":4
+                   },
+                   {
+                      "name":"TASK [Print job id]",
+                      "duration":7
+                   },
+                   {
+                      "name":"TASK [Pause for 5 minutes to build app cache]",
+                      "duration":7
+                   },
+                   {
+                      "name":"TASK [Print components]",
+                      "duration":7
+                   },
+                   {
+                      "name":"TASK [Set tags for the current job]",
+                      "duration":7
+                   },
+                   {
+                      "name":"PLAY [Preparation tasks]",
+                      "duration":7
+                   },
+                   {
+                      "name":"TASK [pre-run]",
+                      "duration":7
+                   },
+                   {
+                      "name":"TASK [get status]",
+                      "duration":7
+                   },
+                   {
+                      "name":"TASK [validate status]",
+                      "duration":9
+                   },
+                   {
+                      "name":"TASK [Pause for 5 minutes to build app cache]",
+                      "duration":9
+                   },
+                   {
+                      "name":"skipped/TASK [get OCP version from job_info]",
+                      "duration":9
+                   },
+                   {
+                      "name":"TASK [do some checks]",
+                      "duration":12
+                   },
+                   {
+                      "name":"TASK [Pause for 5 minutes to build app cache]",
+                      "duration":12
+                   },
+                   {
+                      "name":"TASK [display ocp_version]",
+                      "duration":12
+                   },
+                   {
+                      "name":"TASK [validate extravars]",
+                      "duration":12
+                   },
+                   {
+                      "name":"PLAY [Running ocp deployment]",
+                      "duration":13
+                   },
+                   {
+                      "name":"TASK [running]",
+                      "duration":13
+                   },
+                   {
+                      "name":"TASK [install ocp]",
+                      "duration":13
+                   },
+                   {
+                      "name":"PLAY [Rescue construct]",
+                      "duration":13
+                   },
+                   {
+                      "name":"failed/TASK [Broken task to rescue]",
+                      "duration":13
+                   },
+                   {
+                      "name":"TASK [get status]",
+                      "duration":13
+                   },
+                   {
+                      "name":"TASK [validate status]",
+                      "duration":13
+                   },
+                   {
+                      "name":"PLAY [Post-run tasks]",
+                      "duration":13
+                   },
+                   {
+                      "name":"TASK [post-run]",
+                      "duration":13
+                   },
+                   {
+                      "name":"TASK [Print job outputs location]",
+                      "duration":14
+                   },
+                   {
+                      "name":"TASK [Pause for 5 minutes to build app cache]",
+                      "duration":14
+                   },
+                   {
+                      "name":"TASK [Copy /etc/hosts file to the outputs location]",
+                      "duration":14
+                   },
+                   {
+                      "name":"PLAY [Success tasks]",
+                      "duration":14
+                   },
+                   {
+                      "name":"TASK [success]",
+                      "duration":14
+                   },
+                   {
+                      "name":"TASK [success message]",
+                      "duration":14
+                   }
+                ]
+             }
+          },
+          {
+            "_index":"tasks_duration_cumulated",
+            "_type":"_doc",
+            "_id":"91f71c4b-62b6-415a-b406-17a58f8d6ada",
+            "_score":1.0,
+            "_source":{
+               "job_id":"91f71c4b-62b6-415a-b406-17a58f8d6ada",
+               "created_at":"2021-09-29T15:41:17.173600",
+               "topic_id":"8728c241-eb90-47eb-b080-b957bd2d818e",
+               "remoteci_id":"207e6a77-7a50-49b1-82b1-64c07f42e68a",
+               "data":[
+                  {
+                     "name":"PLAYBOOK: agent.yml",
+                     "duration":0
+                  },
+                  {
+                     "name":"PLAY [Schedule a job]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [Read credentials from env vars]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [Pause for 5 minutes to build app cache]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [validate environment variables]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [stat the tmpdir environment variable]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [Pause for 5 minutes to build app cache]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [check the existence of the temporary directory]",
+                     "duration":0
+                  },
+                  {
+                     "name":"skipped/TASK [Schedule a new job]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [Pause for 5 minutes to build app cache]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [Print job_info]",
+                     "duration":0
+                  },
+                  {
+                     "name":"TASK [Set global variables]",
+                     "duration":4
+                  },
+                  {
+                     "name":"TASK [Pause for 5 minutes to build app cache]",
+                     "duration":4
+                  },
+                  {
+                     "name":"TASK [set job state]",
+                     "duration":4
+                  },
+                  {
+                     "name":"TASK [Print job id]",
+                     "duration":7
+                  },
+                  {
+                     "name":"TASK [Pause for 5 minutes to build app cache]",
+                     "duration":7
+                  },
+                  {
+                     "name":"TASK [Print components]",
+                     "duration":7
+                  },
+                  {
+                     "name":"TASK [Set tags for the current job]",
+                     "duration":7
+                  },
+                  {
+                     "name":"PLAY [Preparation tasks]",
+                     "duration":7
+                  },
+                  {
+                     "name":"TASK [pre-run]",
+                     "duration":7
+                  },
+                  {
+                     "name":"TASK [get status]",
+                     "duration":7
+                  },
+                  {
+                     "name":"TASK [validate status]",
+                     "duration":9
+                  },
+                  {
+                     "name":"TASK [Pause for 5 minutes to build app cache]",
+                     "duration":9
+                  },
+                  {
+                     "name":"skipped/TASK [get OCP version from job_info]",
+                     "duration":9
+                  },
+                  {
+                     "name":"TASK [do some checks]",
+                     "duration":12
+                  },
+                  {
+                     "name":"TASK [Pause for 5 minutes to build app cache]",
+                     "duration":12
+                  },
+                  {
+                     "name":"TASK [display ocp_version]",
+                     "duration":12
+                  },
+                  {
+                     "name":"TASK [validate extravars]",
+                     "duration":12
+                  },
+                  {
+                     "name":"PLAY [Running ocp deployment]",
+                     "duration":20
+                  },
+                  {
+                     "name":"TASK [running]",
+                     "duration":21
+                  },
+                  {
+                     "name":"TASK [install ocp]",
+                     "duration":23
+                  },
+                  {
+                     "name":"PLAY [Rescue construct]",
+                     "duration":24
+                  },
+                  {
+                     "name":"failed/TASK [Broken task to rescue]",
+                     "duration":25
+                  },
+                  {
+                     "name":"TASK [get status]",
+                     "duration":26
+                  },
+                  {
+                     "name":"TASK [validate status]",
+                     "duration":27
+                  },
+                  {
+                     "name":"PLAY [Post-run tasks]",
+                     "duration":28
+                  },
+                  {
+                     "name":"TASK [post-run]",
+                     "duration":29
+                  },
+                  {
+                     "name":"TASK [Print job outputs location]",
+                     "duration":30
+                  },
+                  {
+                     "name":"TASK [Pause for 5 minutes to build app cache]",
+                     "duration":31
+                  },
+                  {
+                     "name":"TASK [Copy /etc/hosts file to the outputs location]",
+                     "duration":32
+                  },
+                  {
+                     "name":"PLAY [Success tasks]",
+                     "duration":33
+                  },
+                  {
+                     "name":"TASK [success]",
+                     "duration":34
+                  },
+                  {
+                     "name":"TASK [success message]",
+                     "duration":35
+                  }
+                ]
+             }
+          }
+       ]
+    }
+ }
