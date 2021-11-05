@@ -15,17 +15,22 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from dci_analytics import config
-from dci_analytics.engine import logger
+import logging
+
 import requests
 
+from dci_analytics import config
+
 _ES_URL = config.CONFIG.get("ELASTICSEARCH_URL")
-LOG = logger.get_logger()
+
+logger = logging.getLogger(__name__)
 
 
 def push(index, data, doc_id):
-    res = requests.post("%s/%s/_create/%s" % (_ES_URL, index, doc_id), json=data)
+    url = "%s/%s/_create/%s" % (_ES_URL, index, doc_id)
+    logger.debug(f"url: {url}")
+    res = requests.post(url, json=data)
     if res.status_code != 201:
-        LOG.error(
+        logger.error(
             "error while pushing data to elastic index %s: %s" % (index, res.text)
         )

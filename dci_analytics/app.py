@@ -14,14 +14,25 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import flask
 
+import flask
 import json
+import logging
+import sys
 import threading
 
 from dci_analytics.engine import synchronization
 
+
 app = flask.Flask(__name__)
+
+
+logger = logging.getLogger(__name__)
+formatter = logging.Formatter("%(levelname)s - %(message)s")
+streamhandler = logging.StreamHandler(stream=sys.stdout)
+streamhandler.setFormatter(formatter)
+logger.addHandler(streamhandler)
+logger.setLevel(logging.DEBUG)
 
 
 _LOCK_SYNCHRONIZATION = threading.Lock()

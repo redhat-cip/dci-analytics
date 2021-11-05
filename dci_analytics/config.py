@@ -14,15 +14,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from dci_analytics.engine import logger
-
+import logging
 import os
 
-LOG = logger.get_logger()
+
+logger = logging.getLogger(__name__)
 
 
 def get_config():
-
     _config = {
         "ELASTICSEARCH_URL": os.getenv("ELASTICSEARCH_URL", "http://127.0.0.1:9200"),
         "POSTGRESQL_USER": os.getenv("POSTGRESQL_USER", "dci"),
@@ -32,7 +31,7 @@ def get_config():
     }
     _debug_config = dict(_config)
     _debug_config["POSTGRESQL_PASSWORD"] = "NA"
-    LOG.debug(_debug_config)
+    logger.debug(_debug_config)
     return _config
 
 

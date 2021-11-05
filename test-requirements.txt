@@ -1,2 +1,4 @@
+tox
 mock
 pytest
+black

@@ -14,18 +14,19 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import datetime
+import logging
+import sys
 
-from dci_analytics import config
-from dci_analytics.engine import logger
-from dci_analytics.engine.workers import task_duration_cumulated
 import psycopg2
 from psycopg2 import extras as pg_extras
 
-import datetime
-import sys
+from dci_analytics import config
+from dci_analytics.engine.workers import task_duration_cumulated
 
 
-LOG = logger.get_logger()
+logger = logging.getLogger(__name__)
+
 _CONFIG = config.CONFIG
 
 
@@ -109,7 +110,7 @@ def synchronize(_lock_synchronization):
     jobs = get_jobs(db_connection)
 
     for job in jobs:
-        LOG.info("process job %s" % job["id"])
+        logger.info("process job %s" % job["id"])
         task_duration_cumulated.process(job)
 
     _lock_synchronization.release()
