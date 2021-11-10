@@ -72,7 +72,7 @@ def get_db_connection():
 def get_table_columns_names(db_conn, table_name):
     with db_conn.cursor(cursor_factory=pg_extras.DictCursor) as cursor:
         try:
-            cursor.execute("SELECT * from %s;" % table_name)
+            cursor.execute("SELECT * from %s LIMIT 0;" % table_name)
             return [d.name for d in cursor.description]
         except Exception as err:
             print("psycopg2 error: %s" % str(err))

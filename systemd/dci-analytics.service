@@ -14,18 +14,9 @@ Environment=PODMAN_SYSTEMD_UNIT=%n
 Restart=on-failure
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/container-dci-analytics.pid %t/container-dci-analytics.ctr-id
-ExecStart=/usr/bin/podman run \
-          --conmon-pidfile %t/container-dci-analytics.pid \
-          --cidfile %t/container-dci-analytics.ctr-id \
-          --cgroups=no-conmon \
-          -d \
-          --replace \
-          --name dci-analytics \
-          -p 2345:2345 \
-          --label "io.containers.autoupdate=registry"
-          quay.io/distributedci/dci-analytics:latest
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/container-dci-analytics.ctr-id -t 10
-ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/container-dci-analytics.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile=%t/container-dci-analytics.pid --cidfile=%t/container-dci-analytics.ctr-id --cgroups=no-conmon -d --replace --name dci-analytics -p 2345:2345 --label "io.containers.autoupdate=registry" --env-file=/run/dci-analytics.env quay.io/distributedci/dci-analytics:latest
+ExecStop=/usr/bin/podman stop --ignore --cidfile=%t/container-dci-analytics.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile=%t/container-dci-analytics.ctr-id
 PIDFile=%t/container-dci-analytics.pid
 Type=forking
 
