@@ -6,4 +6,4 @@ After=network.target
 Type=simple
 User=dci
 Group=dci
-ExecStart=/usr/bin/curl http://127.0.0.1:2345/sync
+ExecStart=/usr/bin/curl -XPOST http://127.0.0.1:2345/sync
