@@ -36,6 +36,7 @@ logger.setLevel(logging.DEBUG)
 
 
 _LOCK_SYNCHRONIZATION = threading.Lock()
+_LOCK_FULL_SYNCHRONIZATION = threading.Lock()
 
 
 @app.route("/", strict_slashes=False)
@@ -59,6 +60,35 @@ def synchronize():
             target=synchronization.synchronize,
             daemon=True,
             args=(_LOCK_SYNCHRONIZATION,),
+        ).start()
+        return flask.Response(
+            json.dumps(
+                {
+                    "message": "Run synchronization",
+                }
+            ),
+            status=201,
+            content_type="application/json",
+        )
+    else:
+        return flask.Response(
+            json.dumps(
+                {
+                    "message": "Already synchronizing, please try later",
+                }
+            ),
+            status=400,
+            content_type="application/json",
+        )
+
+
+@app.route("/sync_full", strict_slashes=False, methods=["POST"])
+def full_synchronize():
+    if _LOCK_FULL_SYNCHRONIZATION.acquire(blocking=False):
+        threading.Thread(
+            target=synchronization.full_synchronize,
+            daemon=True,
+            args=(_LOCK_FULL_SYNCHRONIZATION,),
         ).start()
         return flask.Response(
             json.dumps(

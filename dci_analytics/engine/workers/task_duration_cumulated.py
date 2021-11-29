@@ -63,6 +63,7 @@ def format_data(job, tasks_duration_cumulated):
     return {
         "job_id": job["id"],
         "job_name": job["name"],
+        "job_status": job["status"],
         "created_at": job["created_at"],
         "topic_id": job["topic_id"],
         "remoteci_id": job["remoteci_id"],
