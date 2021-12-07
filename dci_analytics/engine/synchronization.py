@@ -137,7 +137,7 @@ def synchronize(_lock_synchronization):
     limit = 100
     offset = 0
     while True:
-        jobs = get_jobs(db_connection)
+        jobs = get_jobs(db_connection, offset, limit, unit="hours", amount=2)
         if not jobs:
             break
         for job in jobs:
