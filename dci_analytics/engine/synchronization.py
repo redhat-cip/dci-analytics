@@ -21,13 +21,16 @@ import sys
 import psycopg2
 from psycopg2 import extras as pg_extras
 
+
 from dci_analytics import config
 from dci_analytics.engine.workers import task_duration_cumulated
+from dci_analytics.engine.workers import task_components_coverage
 
 
 logger = logging.getLogger(__name__)
 
 _CONFIG = config.CONFIG
+_WORKERS = [task_duration_cumulated, task_components_coverage]
 
 
 def format_field(record, prefix):
@@ -46,11 +49,14 @@ def format_field(record, prefix):
 def format(records):
     res = {}
     js = {}
+    cmpts = {}
     for r in records:
         if r["jobs_id"] not in res:
             res[r["jobs_id"]] = format_field(r, "jobs")
             if not res[r["jobs_id"]]:
                 continue
+            if r["jobs_id"] not in cmpts:
+                cmpts[r["jobs_id"]] = {}
         if "jobstates" not in res[r["jobs_id"]]:
             res[r["jobs_id"]]["jobstates"] = []
         jobstate = format_field(r, "jobstates")
@@ -64,6 +70,15 @@ def format(records):
             js[jobstate["id"]]["files"] = []
         if js_file:
             js[jobstate["id"]]["files"].append(js_file)
+        component = format_field(r, "components")
+        if not component:
+            continue
+        if "components" not in res[r["jobs_id"]]:
+            res[r["jobs_id"]]["components"] = []
+        if component["id"] not in cmpts[r["jobs_id"]]:
+            cmpts[r["jobs_id"]][component["id"]] = component
+            res[r["jobs_id"]]["components"].append(component)
+
     if not res:
         return []
     return list(res.values())
@@ -99,10 +114,14 @@ def get_jobs(db_conn, offset, limit, unit="hours", amount=2):
     ]
     files_columns_names = get_table_columns_names(db_conn, "files")
     files_aliases = ["files.%s as files_%s" % (n, n) for n in files_columns_names]
+    components_columns_names = get_table_columns_names(db_conn, "components")
+    components_aliases = [
+        "components.%s as components_%s" % (n, n) for n in components_columns_names
+    ]
 
     with db_conn.cursor(cursor_factory=pg_extras.DictCursor) as cursor:
         query = """
-        SELECT {jobs_aliases_1}, {jobstates_aliases}, {files_aliases}
+        SELECT {jobs_aliases_1}, {jobstates_aliases}, {files_aliases}, {components_aliases}
         FROM
         (SELECT {jobs_aliases_2}
           FROM JOBS
@@ -110,13 +129,17 @@ def get_jobs(db_conn, offset, limit, unit="hours", amount=2):
           ORDER BY JOBS.created_at ASC
           LIMIT  {limit}
           OFFSET {offset}) AS JOBS
-        LEFT OUTER JOIN JOBSTATES ON JOBSTATES.job_id = jobs_id LEFT OUTER JOIN FILES ON FILES.jobstate_id = JOBSTATES.id
+        LEFT OUTER JOIN JOBSTATES ON JOBSTATES.job_id = jobs_id
+        LEFT OUTER JOIN FILES ON FILES.jobstate_id = JOBSTATES.id
+        LEFT OUTER JOIN JOBS_COMPONENTS on JOBS_COMPONENTS.job_id = jobs_id
+        LEFT OUTER JOIN COMPONENTS on JOBS_COMPONENTS.component_id = COMPONENTS.id
         ORDER BY JOBSTATES.created_at ASC
         """.format(
             jobs_aliases_1=", ".join(jobs_aliases_1),
             jobs_aliases_2=", ".join(jobs_aliases_2),
             jobstates_aliases=", ".join(jobstates_aliases),
             files_aliases=", ".join(files_aliases),
+            components_aliases=", ".join(components_aliases),
             limit=limit,
             offset=offset,
             unit=unit,
@@ -128,7 +151,6 @@ def get_jobs(db_conn, offset, limit, unit="hours", amount=2):
         except Exception as err:
             print("error: %s" % str(err))
             sys.exit(1)
-
     return format(jobs)
 
 
@@ -142,7 +164,8 @@ def synchronize(_lock_synchronization):
             break
         for job in jobs:
             logger.info("process job %s" % job["id"])
-            task_duration_cumulated.process(job)
+            for w in _WORKERS:
+                w.process(job)
         offset += limit
 
     db_connection.close()
@@ -159,7 +182,8 @@ def full_synchronize(_lock_synchronization):
             break
         for job in jobs:
             logger.info("process job %s" % job["id"])
-            task_duration_cumulated.process(job)
+            for w in _WORKERS:
+                w.process(job)
         offset += limit
 
     db_connection.close()
