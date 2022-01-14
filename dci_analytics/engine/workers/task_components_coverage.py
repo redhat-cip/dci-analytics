@@ -15,52 +15,65 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import logging
+import uuid
 
 from dci_analytics.engine import elasticsearch as es
 
 
-def format_component_coverage(job, component):
+logger = logging.getLogger(__name__)
+
+
+def format_component_coverage(job, component, team_id):
     res = {
         "component_id": component["id"],
         "component_name": component["name"],
         "product_id": job["product_id"],
         "topic_id": job["topic_id"],
         "tags": component["tags"],
-        "team_id": job["team_id"],
+        "team_id": team_id,
         "success_jobs": [],
         "failed_jobs": [],
     }
     if job["status"] == "success":
-        res["success_jobs"] = [job["id"]]
+        res["success_jobs"] = [{"id": job["id"], "created_at": job["created_at"]}]
     else:
-        res["failed_jobs"] = [job["id"]]
+        res["failed_jobs"] = [{"id": job["id"], "created_at": job["created_at"]}]
     return res
 
 
 def update_component_coverage(job, component_coverage):
     data = {}
-    do_update = False
     if job["status"] == "success":
-        new_success_jobs = list(set(component_coverage["success_jobs"] + [job["id"]]))
-        if len(new_success_jobs) > len(component_coverage["success_jobs"]):
-            data["success_jobs"] = new_success_jobs
-            do_update = True
+        success_job_ids = {cc["id"] for cc in component_coverage["success_jobs"]}
+        if job["id"] not in success_job_ids:
+            data["success_jobs"] = component_coverage["success_jobs"] + [
+                {"id": job["id"], "created_at": job["created_at"]}
+            ]
+            return True, data
     else:
-        new_failed_jobs = list(set(component_coverage["failed_jobs"] + [job["id"]]))
-        if len(new_failed_jobs) > len(component_coverage["failed_jobs"]):
-            data["failed_jobs"] = new_failed_jobs
-            do_update = True
-    return do_update, data
+        failed_job_ids = {cc["id"] for cc in component_coverage["failed_jobs"]}
+        if job["id"] not in failed_job_ids:
+            data["failed_jobs"] = component_coverage["failed_jobs"] + [
+                {"id": job["id"], "created_at": job["created_at"]}
+            ]
+            return True, data
+    return False, data
 
 
 def process(job):
     components = job["components"]
     for c in components:
-        c = format_component_coverage(job, c)
-        es_c = es.get("tasks_components_coverage", c["component_id"])
-        if es_c is None:
-            es.push("tasks_components_coverage", c, c["component_id"])
-        else:
-            do_update, data = update_component_coverage(job, es_c)
-            if do_update:
-                es.update("tasks_components_coverage", data, c["component_id"])
+        for team in (job["team_id"], "red_hat"):
+            f_c = format_component_coverage(job, c, team)
+            row = es.search(
+                "tasks_components_coverage",
+                "q=component_id:%s AND team_id:%s" % (f_c["component_id"], team),
+            )
+            row = row[0] if len(row) > 0 else []
+            if not row:
+                es.push("tasks_components_coverage", f_c, str(uuid.uuid4()))
+            else:
+                do_update, data = update_component_coverage(job, row["_source"])
+                if do_update:
+                    es.update("tasks_components_coverage", data, row["_id"])

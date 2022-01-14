@@ -19,22 +19,49 @@ from dci_analytics.engine.workers import task_components_coverage
 
 
 def test_update_component_coverage():
-    job = {"status": "success", "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e"}
+    job = {
+        "status": "success",
+        "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e",
+        "created_at": "2022-01-14T00:40:17.145315",
+    }
     c_c = {"success_jobs": [], "failed_jobs": []}
     do_update, data = task_components_coverage.update_component_coverage(job, c_c)
     assert do_update == True  # noqa
-    assert data == {"success_jobs": ["31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e"]}
+    assert {j["id"] for j in data["success_jobs"]} == {
+        "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e"
+    }
 
-    job = {"status": "failure", "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e"}
-    c_c = {"success_jobs": [], "failed_jobs": ["41d1fb0c-c0e0-4b8d-938e-25e0b0a2682f"]}
+    job = {
+        "status": "failure",
+        "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e",
+        "created_at": "2022-01-15T00:40:17.145315",
+    }
+    c_c = {
+        "success_jobs": [],
+        "failed_jobs": [
+            {
+                "id": "41d1fb0c-c0e0-4b8d-938e-25e0b0a2682f",
+                "created_at": "2022-01-15T00:40:17.145315",
+            }
+        ],
+    }
     do_update, data = task_components_coverage.update_component_coverage(job, c_c)
     assert do_update == True  # noqa
-    assert set(data["failed_jobs"]) == set(
-        ["31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e", "41d1fb0c-c0e0-4b8d-938e-25e0b0a2682f"]
-    )
+    assert {j["id"] for j in data["failed_jobs"]} == {
+        "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e",
+        "41d1fb0c-c0e0-4b8d-938e-25e0b0a2682f",
+    }
 
     job = {"status": "success", "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e"}
-    c_c = {"success_jobs": ["31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e"], "failed_jobs": []}
+    c_c = {
+        "success_jobs": [
+            {
+                "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e",
+                "created_at": "2022-01-15T00:40:17.145315",
+            }
+        ],
+        "failed_jobs": [],
+    }
     do_update, data = task_components_coverage.update_component_coverage(job, c_c)
     assert do_update == False  # noqa
     assert data == {}
