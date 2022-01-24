@@ -62,6 +62,8 @@ def update_component_coverage(job, component_coverage):
 
 
 def process(job):
+    if "components" not in job:
+        return
     components = job["components"]
     for c in components:
         for team in (job["team_id"], "red_hat"):
