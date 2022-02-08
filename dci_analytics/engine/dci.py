@@ -23,17 +23,17 @@ from psycopg2 import extras as pg_extras
 
 
 from dci_analytics import config
-from dci_analytics.engine.workers import task_duration_cumulated
-from dci_analytics.engine.workers import task_components_coverage
+from dci_analytics.engine.workers import tasks_duration_cumulated
+from dci_analytics.engine.workers import tasks_components_coverage
 
 
 logger = logging.getLogger(__name__)
 
 _CONFIG = config.CONFIG
-_WORKERS = [task_duration_cumulated, task_components_coverage]
+_WORKERS = [tasks_duration_cumulated, tasks_components_coverage]
 
 
-def format_field(record, prefix):
+def _format_field(record, prefix):
     res = {}
     for k, v in record.items():
         k_split = k.split("_", 1)
@@ -46,38 +46,38 @@ def format_field(record, prefix):
     return res
 
 
-def format(records):
+def _format_jobs(jobs):
     res = {}
     js = {}
     cmpts = {}
-    for r in records:
-        if r["jobs_id"] not in res:
-            res[r["jobs_id"]] = format_field(r, "jobs")
-            if not res[r["jobs_id"]]:
+    for j in jobs:
+        if j["jobs_id"] not in res:
+            res[j["jobs_id"]] = _format_field(j, "jobs")
+            if not res[j["jobs_id"]]:
                 continue
-            if r["jobs_id"] not in cmpts:
-                cmpts[r["jobs_id"]] = {}
-        if "jobstates" not in res[r["jobs_id"]]:
-            res[r["jobs_id"]]["jobstates"] = []
-        jobstate = format_field(r, "jobstates")
+            if j["jobs_id"] not in cmpts:
+                cmpts[j["jobs_id"]] = {}
+        if "jobstates" not in res[j["jobs_id"]]:
+            res[j["jobs_id"]]["jobstates"] = []
+        jobstate = _format_field(j, "jobstates")
         if not jobstate:
             continue
         if jobstate["id"] not in js:
             js[jobstate["id"]] = jobstate
-            res[r["jobs_id"]]["jobstates"].append(jobstate)
-        js_file = format_field(r, "files")
+            res[j["jobs_id"]]["jobstates"].append(jobstate)
+        js_file = _format_field(j, "files")
         if "files" not in js[jobstate["id"]]:
             js[jobstate["id"]]["files"] = []
         if js_file:
             js[jobstate["id"]]["files"].append(js_file)
-        component = format_field(r, "components")
+        component = _format_field(j, "components")
         if not component:
             continue
-        if "components" not in res[r["jobs_id"]]:
-            res[r["jobs_id"]]["components"] = []
-        if component["id"] not in cmpts[r["jobs_id"]]:
-            cmpts[r["jobs_id"]][component["id"]] = component
-            res[r["jobs_id"]]["components"].append(component)
+        if "components" not in res[j["jobs_id"]]:
+            res[j["jobs_id"]]["components"] = []
+        if component["id"] not in cmpts[j["jobs_id"]]:
+            cmpts[j["jobs_id"]][component["id"]] = component
+            res[j["jobs_id"]]["components"].append(component)
 
     if not res:
         return []
@@ -94,7 +94,7 @@ def get_db_connection():
     )
 
 
-def get_table_columns_names(db_conn, table_name):
+def _get_table_columns_names(db_conn, table_name):
     with db_conn.cursor(cursor_factory=pg_extras.DictCursor) as cursor:
         try:
             cursor.execute("SELECT * from %s LIMIT 0;" % table_name)
@@ -105,16 +105,16 @@ def get_table_columns_names(db_conn, table_name):
 
 
 def get_jobs(db_conn, offset, limit, unit="hours", amount=2):
-    jobs_columns_names = get_table_columns_names(db_conn, "jobs")
+    jobs_columns_names = _get_table_columns_names(db_conn, "jobs")
     jobs_aliases_1 = ["jobs_%s" % n for n in jobs_columns_names]
     jobs_aliases_2 = ["jobs.%s as jobs_%s" % (n, n) for n in jobs_columns_names]
-    jobstates_columns_names = get_table_columns_names(db_conn, "jobstates")
+    jobstates_columns_names = _get_table_columns_names(db_conn, "jobstates")
     jobstates_aliases = [
         "jobstates.%s as jobstates_%s" % (n, n) for n in jobstates_columns_names
     ]
-    files_columns_names = get_table_columns_names(db_conn, "files")
+    files_columns_names = _get_table_columns_names(db_conn, "files")
     files_aliases = ["files.%s as files_%s" % (n, n) for n in files_columns_names]
-    components_columns_names = get_table_columns_names(db_conn, "components")
+    components_columns_names = _get_table_columns_names(db_conn, "components")
     components_aliases = [
         "components.%s as components_%s" % (n, n) for n in components_columns_names
     ]
@@ -151,40 +151,46 @@ def get_jobs(db_conn, offset, limit, unit="hours", amount=2):
         except Exception as err:
             print("error: %s" % str(err))
             sys.exit(1)
-    return format(jobs)
+    return _format_jobs(jobs)
 
 
-def synchronize(_lock_synchronization):
-    db_connection = get_db_connection()
-    limit = 100
-    offset = 0
-    while True:
-        jobs = get_jobs(db_connection, offset, limit, unit="hours", amount=2)
-        if not jobs:
-            break
-        for job in jobs:
-            logger.info("process job %s" % job["id"])
-            for w in _WORKERS:
-                w.process(job)
-        offset += limit
-
-    db_connection.close()
-    _lock_synchronization.release()
+def _format_components(components):
+    res = {}
+    for c in components:
+        if c["components_id"] not in res:
+            res[c["components_id"]] = _format_field(c, "components")
+            if not res[c["components_id"]]:
+                continue
+    if not res:
+        return []
+    return list(res.values())
 
 
-def full_synchronize(_lock_synchronization):
-    db_connection = get_db_connection()
-    limit = 100
-    offset = 0
-    while True:
-        jobs = get_jobs(db_connection, offset, limit, unit="months", amount=6)
-        if not jobs:
-            break
-        for job in jobs:
-            logger.info("process job %s" % job["id"])
-            for w in _WORKERS:
-                w.process(job)
-        offset += limit
+def get_components(db_conn, offset, limit, unit="hours", amount=2):
+    components_columns_names = _get_table_columns_names(db_conn, "components")
+    components_aliases = [
+        "components.%s as components_%s" % (n, n) for n in components_columns_names
+    ]
 
-    db_connection.close()
-    _lock_synchronization.release()
+    with db_conn.cursor(cursor_factory=pg_extras.DictCursor) as cursor:
+        query = """
+        SELECT {components_aliases}
+        FROM COMPONENTS
+        WHERE COMPONENTS.state = 'active' AND (COMPONENTS.created_at > (current_timestamp - make_interval({unit} => {amount})))
+        ORDER BY COMPONENTS.created_at ASC
+        LIMIT  {limit}
+        OFFSET {offset}
+        """.format(
+            components_aliases=", ".join(components_aliases),
+            limit=limit,
+            offset=offset,
+            unit=unit,
+            amount=amount,
+        )
+        try:
+            cursor.execute(query)
+            components = [dict(j) for j in cursor.fetchall()]
+        except Exception as err:
+            print("error: %s" % str(err))
+            sys.exit(1)
+    return _format_components(components)

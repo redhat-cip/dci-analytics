@@ -1,4 +1,4 @@
-FROM centos:8
+FROM quay.io/centos/centos:stream8
 
 LABEL name="DCI Analytics" version="0.0.1"
 LABEL maintainer="DCI Team <distributed-ci@redhat.com>"
@@ -15,7 +15,11 @@ RUN yum -y install git \
     yum clean all && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -U tox && \
-    pip3 install --no-cache-dir -r /tmp/requirements.txt
+    pip3 install --no-cache-dir -r /tmp/requirements.txt && \
+    # workaroud to fix ModuleNotFoundError: No module named 'urllib3.packages.six'
+    pip3 uninstall -y urllib3 && \
+    pip3 install urllib3
+
 ENV PYTHONPATH /opt/dci-analytics
 EXPOSE 2345
 

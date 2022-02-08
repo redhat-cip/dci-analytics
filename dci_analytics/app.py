@@ -21,7 +21,8 @@ import logging
 import sys
 import threading
 
-from dci_analytics.engine import synchronization
+from dci_analytics.engine.workers import tasks_duration_cumulated
+from dci_analytics.engine.workers import tasks_components_coverage
 
 
 app = flask.Flask(__name__)
@@ -35,11 +36,11 @@ logger.addHandler(streamhandler)
 logger.setLevel(logging.DEBUG)
 
 
-_LOCK_SYNCHRONIZATION = threading.Lock()
-_LOCK_FULL_SYNCHRONIZATION = threading.Lock()
+_LOCK_TASK_DURATION_CUMULATED = threading.Lock()
+_LOCK_TASK_COMPONENTS_COVERAGE = threading.Lock()
 
 
-@app.route("/", strict_slashes=False)
+@app.route("/ok", strict_slashes=False)
 def index():
     return flask.Response(
         json.dumps(
@@ -53,13 +54,12 @@ def index():
     )
 
 
-@app.route("/sync", strict_slashes=False, methods=["POST"])
-def synchronize():
-    if _LOCK_SYNCHRONIZATION.acquire(blocking=False):
+def lock_and_run(lock, func):
+    if lock.acquire(blocking=False):
         threading.Thread(
-            target=synchronization.synchronize,
+            target=func,
             daemon=True,
-            args=(_LOCK_SYNCHRONIZATION,),
+            args=(lock,),
         ).start()
         return flask.Response(
             json.dumps(
@@ -82,30 +82,33 @@ def synchronize():
         )
 
 
-@app.route("/sync_full", strict_slashes=False, methods=["POST"])
-def full_synchronize():
-    if _LOCK_FULL_SYNCHRONIZATION.acquire(blocking=False):
-        threading.Thread(
-            target=synchronization.full_synchronize,
-            daemon=True,
-            args=(_LOCK_FULL_SYNCHRONIZATION,),
-        ).start()
-        return flask.Response(
-            json.dumps(
-                {
-                    "message": "Run synchronization",
-                }
-            ),
-            status=201,
-            content_type="application/json",
-        )
-    else:
-        return flask.Response(
-            json.dumps(
-                {
-                    "message": "Already synchronizing, please try later",
-                }
-            ),
-            status=400,
-            content_type="application/json",
-        )
+@app.route("/tasks_duration_cumulated/sync", strict_slashes=False, methods=["POST"])
+def tasks_duration_cumulated_sync():
+    return lock_and_run(
+        _LOCK_TASK_DURATION_CUMULATED, tasks_duration_cumulated.synchronize
+    )
+
+
+@app.route(
+    "/tasks_duration_cumulated/full_sync", strict_slashes=False, methods=["POST"]
+)
+def tasks_duration_cumulated_full_sync():
+    return lock_and_run(
+        _LOCK_TASK_DURATION_CUMULATED, tasks_duration_cumulated.full_synchronize
+    )
+
+
+@app.route("/tasks_components_coverage/sync", strict_slashes=False, methods=["POST"])
+def tasks_components_coverage_sync():
+    return lock_and_run(
+        _LOCK_TASK_COMPONENTS_COVERAGE, tasks_components_coverage.synchronize
+    )
+
+
+@app.route(
+    "/tasks_components_coverage/full_sync", strict_slashes=False, methods=["POST"]
+)
+def tasks_components_coverage_full_sync():
+    return lock_and_run(
+        _LOCK_TASK_COMPONENTS_COVERAGE, tasks_components_coverage.full_synchronize
+    )

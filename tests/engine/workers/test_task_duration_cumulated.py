@@ -15,10 +15,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from dci_analytics.engine.workers import task_duration_cumulated
+from dci_analytics.engine.workers import tasks_duration_cumulated
 
 
-def test_get_tasks_duration_cumulated():
+def test__get_tasks_duration_cumulated():
     tasks = [
         {"created_at": "2021-09-28T20:10:32.162724", "name": "task 1"},
         {"created_at": "2021-09-28T20:12:32.162724", "name": "task 2"},
@@ -28,8 +28,8 @@ def test_get_tasks_duration_cumulated():
 
     expected_duration = {"task 1": 120, "task 2": 360, "task 3": 600}
 
-    tasks_duration_cumulated = task_duration_cumulated.get_tasks_duration_cumulated(
+    _tasks_duration_cumulated = tasks_duration_cumulated._get_tasks_duration_cumulated(
         tasks
     )
-    for tdc in tasks_duration_cumulated:
+    for tdc in _tasks_duration_cumulated:
         assert expected_duration[tdc["name"]] == tdc["duration"]

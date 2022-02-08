@@ -18,9 +18,15 @@
 
 from datetime import datetime as dt
 from dci_analytics.engine import elasticsearch as es
+from dci_analytics.engine import dci as d_u
+
+import logging
 
 
-def get_sorted_tasks(job):
+logger = logging.getLogger(__name__)
+
+
+def _get_sorted_tasks(job):
     job_files = []
     for js in job["jobstates"]:
         js["files"] = sorted(
@@ -31,11 +37,11 @@ def get_sorted_tasks(job):
     return job_files
 
 
-def get_task_timestamp(task):
+def _get_task_timestamp(task):
     return dt.strptime(task["created_at"], "%Y-%m-%dT%H:%M:%S.%f")
 
 
-def get_tasks_duration_cumulated(tasks):
+def _get_tasks_duration_cumulated(tasks):
     tasks_duration_cumulated = []
     if not tasks:
         return tasks_duration_cumulated
@@ -45,8 +51,8 @@ def get_tasks_duration_cumulated(tasks):
 
     # compute absolute duration of each task
     for i in range(len(tasks) - 1):
-        timestamp_1 = get_task_timestamp(tasks[i])
-        timestamp_2 = get_task_timestamp(tasks[i + 1])
+        timestamp_1 = _get_task_timestamp(tasks[i])
+        timestamp_2 = _get_task_timestamp(tasks[i + 1])
         duration = timestamp_2 - timestamp_1
         tasks_duration_cumulated.append(
             {"name": tasks[i]["name"], "duration": duration.seconds}
@@ -59,7 +65,7 @@ def get_tasks_duration_cumulated(tasks):
     return tasks_duration_cumulated
 
 
-def format_data(job, tasks_duration_cumulated):
+def _format_data(job, tasks_duration_cumulated):
     return {
         "job_id": job["id"],
         "job_name": job["name"],
@@ -71,8 +77,34 @@ def format_data(job, tasks_duration_cumulated):
     }
 
 
-def process(job):
-    tasks = get_sorted_tasks(job)
-    tasks_duration_cumulated = get_tasks_duration_cumulated(tasks)
-    data = format_data(job, tasks_duration_cumulated)
+def _process(job):
+    tasks = _get_sorted_tasks(job)
+    tasks_duration_cumulated = _get_tasks_duration_cumulated(tasks)
+    data = _format_data(job, tasks_duration_cumulated)
     es.push("tasks_duration_cumulated", data, data["job_id"])
+
+
+def _sync(unit, amount):
+    db_connection = d_u.get_db_connection()
+    limit = 100
+    offset = 0
+    while True:
+        jobs = d_u.get_jobs(db_connection, offset, limit, unit=unit, amount=amount)
+        if not jobs:
+            break
+        for job in jobs:
+            logger.info("process job %s" % job["id"])
+            _process(job)
+        offset += limit
+
+    db_connection.close()
+
+
+def synchronize(_lock_synchronization):
+    _sync("hours", 2)
+    _lock_synchronization.release()
+
+
+def full_synchronize(_lock_synchronization):
+    _sync("months", 6)
+    _lock_synchronization.release()

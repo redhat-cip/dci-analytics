@@ -6,7 +6,7 @@ Description=Runs dci-analytics synchronization every hours
 OnBootSec=1min
 # Time between running each consecutive time
 OnUnitActiveSec=1h
-Unit=dci-analytics.service
+Unit=dci-analytics-sync.service
 
 [Install]
 WantedBy=multi-user.target

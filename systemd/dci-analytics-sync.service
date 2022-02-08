@@ -3,7 +3,8 @@ Description=DCI-Analytics synchronization service
 After=network.target
 
 [Service]
-Type=simple
+Type=oneshot
 User=dci
 Group=dci
-ExecStart=/usr/bin/curl -XPOST http://127.0.0.1:2345/sync
+ExecStart=/bin/bash -c '/usr/bin/curl -XPOST http://127.0.0.1:2345/task_duration_cumulated/sync; /usr/bin/curl -XPOST http://127.0.0.1:2345//task_components_coverage/sync'
+
