@@ -5,13 +5,14 @@ LABEL maintainer="DCI Team <distributed-ci@redhat.com>"
 
 ENV LANG en_US.UTF-8
 
+RUN mkdir /opt/dci-control-server
 RUN mkdir /opt/dci-analytics
 ADD . /opt/dci-analytics/
 WORKDIR /opt/dci-analytics
 
 COPY requirements.txt /tmp/requirements.txt
 RUN yum -y install git \
-    python3-devel python3-pip python3-setuptools && \
+    python3-devel python3-pip python3-setuptools gcc && \
     yum clean all && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -U tox && \
@@ -20,7 +21,7 @@ RUN yum -y install git \
     pip3 uninstall -y urllib3 && \
     pip3 install urllib3
 
-ENV PYTHONPATH /opt/dci-analytics
+ENV PYTHONPATH /opt/dci-analytics:/opt/dci-control-server
 EXPOSE 2345
 
 CMD ["python3", "/opt/dci-analytics/bin/run-api-server"]

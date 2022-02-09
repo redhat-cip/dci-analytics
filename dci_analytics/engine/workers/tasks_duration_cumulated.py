@@ -17,8 +17,10 @@
 
 
 from datetime import datetime as dt
+from dci.analytics import access_data_layer as a_d_l
+
 from dci_analytics.engine import elasticsearch as es
-from dci_analytics.engine import dci as d_u
+from dci_analytics.engine import dci_db
 
 import logging
 
@@ -85,11 +87,11 @@ def _process(job):
 
 
 def _sync(unit, amount):
-    db_connection = d_u.get_db_connection()
+    session_db = dci_db.get_session_db()
     limit = 100
     offset = 0
     while True:
-        jobs = d_u.get_jobs(db_connection, offset, limit, unit=unit, amount=amount)
+        jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
         if not jobs:
             break
         for job in jobs:
@@ -97,7 +99,7 @@ def _sync(unit, amount):
             _process(job)
         offset += limit
 
-    db_connection.close()
+    session_db.close()
 
 
 def synchronize(_lock_synchronization):
@@ -106,5 +108,5 @@ def synchronize(_lock_synchronization):
 
 
 def full_synchronize(_lock_synchronization):
-    _sync("months", 6)
+    _sync("weeks", 24)
     _lock_synchronization.release()

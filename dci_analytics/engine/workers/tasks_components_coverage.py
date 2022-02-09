@@ -16,19 +16,13 @@
 # under the License.
 
 import logging
-import sys
-import uuid
 
+from dci.analytics import access_data_layer as a_d_l
 from dci_analytics.engine import elasticsearch as es
-from dci_analytics.engine import dci as d_u
+from dci_analytics.engine import dci_db
 
 
 logger = logging.getLogger(__name__)
-formatter = logging.Formatter("%(levelname)s - %(message)s")
-streamhandler = logging.StreamHandler(stream=sys.stdout)
-streamhandler.setFormatter(formatter)
-logger.addHandler(streamhandler)
-logger.setLevel(logging.DEBUG)
 
 
 def format_component_coverage(component, team_id, job=None):
@@ -38,6 +32,8 @@ def format_component_coverage(component, team_id, job=None):
         "product_id": component.get("product_id", ""),
         "topic_id": component["topic_id"],
         "tags": component["tags"],
+        "type": component["type"],
+        "created_at": component["created_at"],
         "team_id": team_id,
         "success_jobs": [],
         "failed_jobs": [],
@@ -85,7 +81,11 @@ def process(job):
             )
             row = row[0] if len(row) > 0 else []
             if not row:
-                es.push("tasks_components_coverage", f_c, str(uuid.uuid4()))
+                if team == "red_hat":
+                    row_id = "red_hat-%s" % f_c["component_id"]
+                else:
+                    row_id = f_c["component_id"]
+                es.push("tasks_components_coverage", f_c, row_id)
             else:
                 do_update, data = update_component_coverage(job, row["_source"])
                 if do_update:
@@ -94,7 +94,7 @@ def process(job):
 
 
 def _sync(unit, amount):
-    db_connection = d_u.get_db_connection()
+    session_db = dci_db.get_session_db()
     limit = 100
     offset = 0
     all_components = dict()
@@ -103,8 +103,8 @@ def _sync(unit, amount):
 
     # get all components within the timeframe
     while True:
-        components = d_u.get_components(
-            db_connection, offset, limit, unit=unit, amount=amount
+        components = a_d_l.get_components(
+            session_db, offset, limit, unit=unit, amount=amount
         )
         if not components:
             break
@@ -115,7 +115,7 @@ def _sync(unit, amount):
     # process all the jobs within the same timeframe
     offset = 0
     while True:
-        jobs = d_u.get_jobs(db_connection, offset, limit, unit=unit, amount=amount)
+        jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
         if not jobs:
             break
         for job in jobs:
@@ -131,25 +131,13 @@ def _sync(unit, amount):
     for _, v in all_components.items():
         if v["id"] not in components_processed_ids:
             if v["team_id"]:
-                row = es.search(
-                    "tasks_components_coverage",
-                    "q=component_id:%s AND topic_id:%s AND team_id:%s"
-                    % (v["id"], v["topic_id"], v["team_id"]),
-                )
-                if len(row) == 0:
-                    f_c = format_component_coverage(v, v["team_id"])
-                    es.push("tasks_components_coverage", f_c, str(uuid.uuid4()))
+                f_c = format_component_coverage(v, v["team_id"])
+                es.push("tasks_components_coverage", f_c, v["id"])
             else:
-                row = es.search(
-                    "tasks_components_coverage",
-                    "q=component_id:%s AND topic_id:%s AND team_id:%s"
-                    % (v["id"], v["topic_id"], "red_hat"),
-                )
-                if len(row) == 0:
-                    f_c = format_component_coverage(v, "red_hat")
-                    es.push("tasks_components_coverage", f_c, str(uuid.uuid4()))
+                f_c = format_component_coverage(v, "red_hat")
+                es.push("tasks_components_coverage", f_c, "red_hat-%s" % v["id"])
 
-    db_connection.close()
+    session_db.close()
 
 
 def synchronize(_lock_synchronization):
@@ -158,5 +146,5 @@ def synchronize(_lock_synchronization):
 
 
 def full_synchronize(_lock_synchronization):
-    _sync("months", 6)
+    _sync("weeks", 24)
     _lock_synchronization.release()

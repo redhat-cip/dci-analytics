@@ -28,6 +28,7 @@ def get_config():
         "POSTGRESQL_PASSWORD": os.getenv("POSTGRESQL_PASSWORD", "dci"),
         "POSTGRESQL_HOST": os.getenv("POSTGRESQL_HOST", "127.0.0.1"),
         "POSTGRESQL_PORT": os.getenv("POSTGRESQL_PORT", "5432"),
+        "POSTGRESQL_DATABASE": os.getenv("POSTGRESQL_DATABASE", "dci"),
     }
     _debug_config = dict(_config)
     _debug_config["POSTGRESQL_PASSWORD"] = "NA"

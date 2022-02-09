@@ -1,3 +1,5 @@
 flask
-psycopg2
 requests
+SQLAlchemy
+SQLAlchemy-Utils
+git+http://softwarefactory-project.io/r/dci-control-server
