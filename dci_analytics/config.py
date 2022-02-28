@@ -29,10 +29,11 @@ def get_config():
         "POSTGRESQL_HOST": os.getenv("POSTGRESQL_HOST", "127.0.0.1"),
         "POSTGRESQL_PORT": os.getenv("POSTGRESQL_PORT", "5432"),
         "POSTGRESQL_DATABASE": os.getenv("POSTGRESQL_DATABASE", "dci"),
+        "DCI_LOGIN": os.getenv("DCI_LOGIN", "admin"),
+        "DCI_PASSWORD": os.getenv("DCI_PASSWORD", "admin"),
+        "DCI_CS_URL": os.getenv("DCI_CS_URL", "http://127.0.0.1:5000"),
     }
-    _debug_config = dict(_config)
-    _debug_config["POSTGRESQL_PASSWORD"] = "NA"
-    logger.debug(_debug_config)
+
     return _config
 
 

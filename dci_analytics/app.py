@@ -23,6 +23,7 @@ import threading
 
 from dci_analytics.engine.workers import tasks_duration_cumulated
 from dci_analytics.engine.workers import tasks_components_coverage
+from dci_analytics.engine.workers import tasks_junit
 
 
 app = flask.Flask(__name__)
@@ -38,6 +39,7 @@ logger.setLevel(logging.DEBUG)
 
 _LOCK_TASK_DURATION_CUMULATED = threading.Lock()
 _LOCK_TASK_COMPONENTS_COVERAGE = threading.Lock()
+_LOCK_TASK_JUNIT = threading.Lock()
 
 
 @app.route("/ok", strict_slashes=False)
@@ -112,3 +114,13 @@ def tasks_components_coverage_full_sync():
     return lock_and_run(
         _LOCK_TASK_COMPONENTS_COVERAGE, tasks_components_coverage.full_synchronize
     )
+
+
+@app.route("/tasks_junit/sync", strict_slashes=False, methods=["POST"])
+def tasks_junit_sync():
+    return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.synchronize)
+
+
+@app.route("/tasks_junit/full_sync", strict_slashes=False, methods=["POST"])
+def tasks_junit_full_sync():
+    return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.full_synchronize)
