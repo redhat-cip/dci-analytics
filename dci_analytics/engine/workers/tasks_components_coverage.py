@@ -27,8 +27,9 @@ logger = logging.getLogger(__name__)
 
 def format_component_coverage(component, team_id, job=None):
     res = {
-        "component_id": component["id"],
-        "component_name": component["name"],
+        "id": component["id"],
+        "name": component["name"],
+        "canonical_project_name": component["canonical_project_name"],
         "product_id": component.get("product_id", ""),
         "topic_id": component["topic_id"],
         "tags": component["tags"],
@@ -77,14 +78,14 @@ def process(job):
             f_c = format_component_coverage(c, team, job)
             row = es.search(
                 "tasks_components_coverage",
-                "q=component_id:%s AND team_id:%s" % (f_c["component_id"], team),
+                "q=id:%s AND team_id:%s" % (f_c["id"], team),
             )
             row = row[0] if len(row) > 0 else []
             if not row:
                 if team == "red_hat":
-                    row_id = "red_hat-%s" % f_c["component_id"]
+                    row_id = "red_hat-%s" % f_c["id"]
                 else:
-                    row_id = f_c["component_id"]
+                    row_id = f_c["id"]
                 es.push("tasks_components_coverage", f_c, row_id)
             else:
                 do_update, data = update_component_coverage(job, row["_source"])
