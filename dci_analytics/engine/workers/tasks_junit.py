@@ -40,7 +40,10 @@ def junit_to_dict(junit):
             key = key.strip()
             key = key.replace(",", "_")
             if tc.get("time"):
-                res[key] = float(tc.get("time"))
+                try:
+                    res[key] = float(tc.get("time"))
+                except Exception:
+                    res[key] = -1.0
             else:
                 res[key] = -1.0
 
