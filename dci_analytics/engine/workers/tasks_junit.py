@@ -94,8 +94,12 @@ def _sync(unit, amount):
         jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
         if not jobs:
             break
+
         for job in jobs:
             logger.info("process job %s" % job["id"])
+            row = es.search("tasks_junit", "q=id:%s" % job["id"])
+            if row:
+                continue
             _process(api_conn, job)
         offset += limit
 
