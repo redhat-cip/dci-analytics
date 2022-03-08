@@ -121,7 +121,12 @@ def _sync(unit, amount):
             break
         for job in jobs:
             logger.info("process job %s" % job["id"])
-            current_components_processed = process(job)
+            try:
+                current_components_processed = process(job)
+            except Exception as e:
+                logger.error(
+                    "error while processing job '%s': %s" % (job["id"], str(e))
+                )
             components_processed.update(current_components_processed)
         offset += limit
 

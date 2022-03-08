@@ -100,7 +100,12 @@ def _sync(unit, amount):
             row = es.search("tasks_junit", "q=id:%s" % job["id"])
             if row:
                 continue
-            _process(api_conn, job)
+            try:
+                _process(api_conn, job)
+            except Exception as e:
+                logger.error(
+                    "error while processing job '%s': %s" % (job["id"], str(e))
+                )
         offset += limit
 
     session_db.close()

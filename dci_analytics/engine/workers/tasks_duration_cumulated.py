@@ -96,7 +96,12 @@ def _sync(unit, amount):
             break
         for job in jobs:
             logger.info("process job %s" % job["id"])
-            _process(job)
+            try:
+                _process(job)
+            except Exception as e:
+                logger.error(
+                    "error while processing job '%s': %s" % (job["id"], str(e))
+                )
         offset += limit
 
     session_db.close()
