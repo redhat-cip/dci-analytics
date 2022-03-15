@@ -28,6 +28,7 @@ from dciclient.v1.api import context
 from dciclient.v1.api import file as dci_file
 
 import logging
+import pandas as pd
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,10 @@ logger = logging.getLogger(__name__)
 def junit_to_dict(junit):
     def _process_testcases(testsuite, res):
         for tc in testsuite:
+            classname = tc.get("classname")
+            name = tc.get("name")
+            if not classname or not name:
+                continue
             key = "%s/%s" % (tc.get("classname"), tc.get("name"))
             key = key.strip()
             key = key.replace(",", "_")
@@ -119,3 +124,113 @@ def synchronize(_lock_synchronization):
 def full_synchronize(_lock_synchronization):
     _sync("weeks", 24)
     _lock_synchronization.release()
+
+
+def filter_jobs(jobs, file_test_name):
+    """keep only the job information with the junit content according to the file testname"""
+    res = []
+    for j in jobs:
+        j = j["_source"]
+        for f in j["files"]:
+            if f["name"] == file_test_name:
+                j["junit_content"] = f["junit_content"]
+                res.append(
+                    {
+                        "id": j["id"],
+                        "created_at": j["created_at"],
+                        "junit_content": f["junit_content"],
+                    }
+                )
+                break
+    return res
+
+
+def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, test_name):
+
+    jobs_dataframes = []
+    jobs_ids_dates = []
+    size = 5
+    body = {
+        "query": {
+            "bool": {
+                "must": [
+                    {"range": {"created_at": {"gte": start_date, "lt": end_date}}},
+                    {"term": {"topic_id": topic_id}},
+                    {"term": {"remoteci_id": remoteci_id}},
+                ]
+            }
+        },
+        "from": 0,
+        "size": size,
+        "sort": [
+            {
+                "created_at": {
+                    "order": "desc",
+                    "format": "strict_date_optional_time_nanos",
+                }
+            }
+        ],
+    }
+    while True:
+        jobs = es.search_json("tasks_junit", body)
+        if not jobs:
+            break
+        jobs = filter_jobs(jobs, test_name)
+        for j in jobs:
+            df = pd.DataFrame(j["junit_content"], index=[j["id"]])
+            jobs_dataframes.append(df)
+            jobs_ids_dates.append(
+                {
+                    "date": j["created_at"],
+                    "id": j["id"],
+                }
+            )
+        body["from"] += size
+
+    if not jobs_dataframes:
+        return None, None
+    return pd.concat(jobs_dataframes), jobs_ids_dates
+
+
+def topics_comparison(
+    topic_name_1,
+    topic_1_start_date,
+    topic_1_end_date,
+    remoteci_1,
+    topic_1_baseline_computation,
+    topic_name_2,
+    topic_2_start_date,
+    topic_2_end_date,
+    remoteci_2,
+    topic_2_baseline_computation,
+    test_name,
+):
+    topic_1_jobs, _ = get_jobs_dataset(
+        topic_name_1, topic_1_start_date, topic_1_end_date, remoteci_1, test_name
+    )
+    if topic_1_baseline_computation == "mean":
+        topic_1_jobs_computed = topic_1_jobs.mean()
+    elif topic_1_baseline_computation == "median":
+        topic_1_jobs_computed = topic_1_jobs.median()
+    else:
+        # use only the latest job results
+        topic_1_jobs_computed = topic_1_jobs.iloc[-1]
+
+    topic_2_jobs, _ = get_jobs_dataset(
+        topic_name_2, topic_2_start_date, topic_2_end_date, remoteci_2, test_name
+    )
+    if topic_2_baseline_computation == "mean":
+        topic_2_jobs = topic_2_jobs.mean().to_frame()
+    elif topic_2_baseline_computation == "median":
+        topic_2_jobs = topic_2_jobs.median().to_frame()
+    else:
+        # use only the latest job results
+        topic_2_jobs = topic_2_jobs.iloc[-1:].T
+
+    def delta(lign):
+        if lign.name not in topic_1_jobs.columns.values:
+            return "N/A"
+        diff = lign - topic_1_jobs_computed[lign.name]
+        return (diff * 100.0) / topic_1_jobs_computed[lign.name]
+
+    return topic_2_jobs.apply(delta, axis=1)

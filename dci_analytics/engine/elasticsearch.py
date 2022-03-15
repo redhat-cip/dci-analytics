@@ -52,10 +52,13 @@ def get(index, doc_id):
         return None
 
 
-def search(index, query):
+def search(index, query=None, json=None):
     res = requests.get("%s/%s/_search?%s" % (_ES_URL, index, query))
-    if res.status_code == 404:
-        return []
+    return res.json()["hits"]["hits"]
+
+
+def search_json(index, json):
+    res = requests.get("%s/%s/_search" % (_ES_URL, index), json=json)
     return res.json()["hits"]["hits"]
 
 

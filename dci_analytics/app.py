@@ -124,3 +124,87 @@ def tasks_junit_sync():
 @app.route("/tasks_junit/full_sync", strict_slashes=False, methods=["POST"])
 def tasks_junit_full_sync():
     return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.full_synchronize)
+
+
+@app.route("/junit_topics_comparison", strict_slashes=False, methods=["POST"])
+def junit_topics_comparison():
+    topic_name_1 = flask.request.json["topic_name_1"]
+    topic_1_start_date = flask.request.json["topic_1_start_date"]
+    topic_1_end_date = flask.request.json["topic_1_end_date"]
+    remoteci_1 = flask.request.json["remoteci_1"]
+    topic_1_baseline_computation = flask.request.json["topic_1_baseline_computation"]
+
+    topic_name_2 = flask.request.json["topic_name_2"]
+    topic_2_start_date = flask.request.json["topic_2_start_date"]
+    topic_2_end_date = flask.request.json["topic_2_end_date"]
+    test_name = flask.request.json["test_name"]
+    remoteci_2 = flask.request.json["remoteci_2"]
+    topic_2_baseline_computation = flask.request.json["topic_2_baseline_computation"]
+
+    comparison = tasks_junit.topics_comparison(
+        topic_name_1,
+        topic_1_start_date,
+        topic_1_end_date,
+        remoteci_1,
+        topic_1_baseline_computation,
+        topic_name_2,
+        topic_2_start_date,
+        topic_2_end_date,
+        remoteci_2,
+        topic_2_baseline_computation,
+        test_name,
+    )
+
+    # Bar chart, histogram
+    min = comparison.min() - 1.0
+    if isinstance(min, float):
+        min = int(min)
+    else:
+        min = int(min.min())
+
+    max = comparison.max() + 1.0
+    if isinstance(max, float):
+        max = int(max)
+    else:
+        max = int(max.max())
+
+    interval = int((max - min) / 25.0)
+    if interval == 0:
+        interval = 1
+    intervals = []
+    for i in range(min, max, interval):
+        intervals.append((i, i + interval))
+    intervals.sort()
+    result = {}
+    for i in intervals:
+        result[i] = 0
+    for i in range(0, comparison.shape[0]):
+        for j in range(0, comparison.shape[1]):
+            value = comparison.iloc[i, j]
+            for inter in intervals:
+                if value >= inter[0] and value < inter[1]:
+                    result[inter] += 1
+    values = []
+    for inter in intervals:
+        values.append(result[inter])
+
+    job_id = comparison.columns.tolist()[0]
+    comparison.sort_values(by=job_id, ascending=False, inplace=True)
+    testcases = comparison.index.tolist()
+    details = []
+    for testcase in testcases:
+        details.append(
+            {"testcase": testcase, "value": comparison.loc[testcase, job_id]}
+        )
+
+    return flask.Response(
+        json.dumps(
+            {
+                "values": values,
+                "intervals": [[i, j] for i, j in intervals],
+                "details": details,
+            }
+        ),
+        status=201,
+        content_type="application/json",
+    )
