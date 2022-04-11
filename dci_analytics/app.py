@@ -18,7 +18,6 @@
 import flask
 import json
 import logging
-import sys
 import threading
 
 from dci_analytics.engine.workers import tasks_duration_cumulated
@@ -29,9 +28,9 @@ from dci_analytics.engine.workers import tasks_junit
 app = flask.Flask(__name__)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 formatter = logging.Formatter("%(levelname)s - %(message)s")
-streamhandler = logging.StreamHandler(stream=sys.stdout)
+streamhandler = logging.StreamHandler()
 streamhandler.setFormatter(formatter)
 logger.addHandler(streamhandler)
 logger.setLevel(logging.DEBUG)
@@ -123,6 +122,7 @@ def tasks_junit_sync():
 
 @app.route("/tasks_junit/full_sync", strict_slashes=False, methods=["POST"])
 def tasks_junit_full_sync():
+    logger.info("running full synchronization")
     return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.full_synchronize)
 
 

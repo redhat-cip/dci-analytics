@@ -31,7 +31,7 @@ import logging
 import pandas as pd
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def junit_to_dict(junit):
@@ -71,15 +71,19 @@ def get_file_content(api_conn, f):
     return r.content
 
 
-def _process(api_conn, job):
+def _process_sync(api_conn, job):
     files = []
+    junit_found = False
     for f in job["files"]:
         if f["state"] != "active":
             continue
         if f["mime"] == "application/junit":
+            junit_found = True
             file_content = get_file_content(api_conn, f)
             f["junit_content"] = junit_to_dict(file_content)
             files.append(f)
+    if not junit_found:
+        return
     job["files"] = files
     job.pop("jobstates")
     es.push("tasks_junit", job, job["id"])
@@ -93,20 +97,21 @@ def _sync(unit, amount):
         dci_password=_config["DCI_PASSWORD"],
         dci_cs_url=_config["DCI_CS_URL"],
     )
-    limit = 100
+    limit = 10
     offset = 0
     while True:
         jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
         if not jobs:
+            logger.info("no jobs to get from the api")
             break
-
+        logger.info("got %s jobs from the api" % len(jobs))
         for job in jobs:
             logger.info("process job %s" % job["id"])
             row = es.search("tasks_junit", "q=id:%s" % job["id"])
             if row:
                 continue
             try:
-                _process(api_conn, job)
+                _process_sync(api_conn, job)
             except Exception as e:
                 logger.error(
                     "error while processing job '%s': %s" % (job["id"], str(e))
@@ -122,7 +127,7 @@ def synchronize(_lock_synchronization):
 
 
 def full_synchronize(_lock_synchronization):
-    _sync("weeks", 24)
+    _sync("weeks", 8)
     _lock_synchronization.release()
 
 
