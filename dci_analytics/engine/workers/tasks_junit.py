@@ -29,9 +29,12 @@ from dciclient.v1.api import file as dci_file
 
 import logging
 import pandas as pd
+import requests
 
 
 logger = logging.getLogger()
+
+_ES_URL = config.CONFIG.get("ELASTICSEARCH_URL")
 
 
 def junit_to_dict(junit):
@@ -89,7 +92,25 @@ def _process_sync(api_conn, job):
     es.push("tasks_junit", job, job["id"])
 
 
+def _init_index(index):
+    url = "%s/%s" % (_ES_URL, index)
+    result = requests.get(url)
+    if result.status_code == 404:
+        url = "%s/%s/_mapping" % (_ES_URL, index)
+        requests.put(
+            url,
+            json={
+                "properties": {
+                    "topic_id": {"type": "keyword"},
+                    "remoteci_id": {"type": "keyword"},
+                    "files.junit_content": {"enabled": False},
+                }
+            },
+        )
+
+
 def _sync(unit, amount):
+    _init_index("tasks_junit")
     session_db = dci_db.get_session_db()
     _config = config.get_config()
     api_conn = context.build_dci_context(
