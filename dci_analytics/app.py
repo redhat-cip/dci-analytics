@@ -128,30 +128,38 @@ def tasks_junit_full_sync():
 
 @app.route("/junit_topics_comparison", strict_slashes=False, methods=["POST"])
 def junit_topics_comparison():
-    topic_name_1 = flask.request.json["topic_name_1"]
+    team_1_id = flask.request.json["team_1_id"]
+    topic_1_id = flask.request.json["topic_1_id"]
     topic_1_start_date = flask.request.json["topic_1_start_date"]
     topic_1_end_date = flask.request.json["topic_1_end_date"]
-    remoteci_1 = flask.request.json["remoteci_1"]
+    remoteci_1_id = flask.request.json["remoteci_1"]
     topic_1_baseline_computation = flask.request.json["topic_1_baseline_computation"]
+    tags_1 = flask.request.json["tags_1"]
 
-    topic_name_2 = flask.request.json["topic_name_2"]
+    team_2_id = flask.request.json["team_2_id"]
+    topic_2_id = flask.request.json["topic_2_id"]
     topic_2_start_date = flask.request.json["topic_2_start_date"]
     topic_2_end_date = flask.request.json["topic_2_end_date"]
     test_name = flask.request.json["test_name"]
-    remoteci_2 = flask.request.json["remoteci_2"]
+    remoteci_2_id = flask.request.json["remoteci_2"]
     topic_2_baseline_computation = flask.request.json["topic_2_baseline_computation"]
+    tags_2 = flask.request.json["tags_2"]
 
     comparison = tasks_junit.topics_comparison(
-        topic_name_1,
+        team_1_id,
+        topic_1_id,
         topic_1_start_date,
         topic_1_end_date,
-        remoteci_1,
+        remoteci_1_id,
         topic_1_baseline_computation,
-        topic_name_2,
+        tags_1,
+        team_2_id,
+        topic_2_id,
         topic_2_start_date,
         topic_2_end_date,
-        remoteci_2,
+        remoteci_2_id,
         topic_2_baseline_computation,
+        tags_2,
         test_name,
     )
 

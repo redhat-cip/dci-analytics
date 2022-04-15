@@ -219,20 +219,24 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, test_name):
 
 
 def topics_comparison(
-    topic_name_1,
+    team_1_id,
+    topic_1_id,
     topic_1_start_date,
     topic_1_end_date,
-    remoteci_1,
+    remoteci_1_id,
     topic_1_baseline_computation,
-    topic_name_2,
+    tags_1,
+    team_2_id,
+    topic_2_id,
     topic_2_start_date,
     topic_2_end_date,
-    remoteci_2,
+    remoteci_2_id,
     topic_2_baseline_computation,
+    tags_2,
     test_name,
 ):
     topic_1_jobs, _ = get_jobs_dataset(
-        topic_name_1, topic_1_start_date, topic_1_end_date, remoteci_1, test_name
+        topic_1_id, topic_1_start_date, topic_1_end_date, remoteci_1_id, test_name
     )
     if topic_1_baseline_computation == "mean":
         topic_1_jobs_computed = topic_1_jobs.mean()
@@ -243,7 +247,7 @@ def topics_comparison(
         topic_1_jobs_computed = topic_1_jobs.iloc[-1]
 
     topic_2_jobs, _ = get_jobs_dataset(
-        topic_name_2, topic_2_start_date, topic_2_end_date, remoteci_2, test_name
+        topic_2_id, topic_2_start_date, topic_2_end_date, remoteci_2_id, test_name
     )
     if topic_2_baseline_computation == "mean":
         topic_2_jobs = topic_2_jobs.mean().to_frame()
