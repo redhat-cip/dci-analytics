@@ -35,6 +35,7 @@ def format_component_coverage(component, team_id, job=None):
         "tags": component["tags"],
         "type": component["type"],
         "created_at": component["created_at"],
+        "released_at": component["released_at"],
         "team_id": team_id,
         "success_jobs": [],
         "failed_jobs": [],
