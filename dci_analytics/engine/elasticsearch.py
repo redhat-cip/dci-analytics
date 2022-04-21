@@ -77,6 +77,7 @@ def init_index(index, json=None):
     url = "%s/%s" % (_ES_URL, index)
     result = requests.get(url)
     if result.status_code == 404:
+        requests.put("%s/%s" % (_ES_URL, index))
         url = "%s/%s/_mapping" % (_ES_URL, index)
         if json:
             requests.put(url, json=json)
