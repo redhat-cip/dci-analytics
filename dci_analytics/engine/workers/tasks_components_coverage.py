@@ -20,9 +20,12 @@ import logging
 from dci.analytics import access_data_layer as a_d_l
 from dci_analytics.engine import elasticsearch as es
 from dci_analytics.engine import dci_db
+from dci_analytics import config
 
 
 logger = logging.getLogger(__name__)
+
+_ES_URL = config.CONFIG.get("ELASTICSEARCH_URL")
 
 
 def format_component_coverage(component, team_id, job=None):
@@ -96,6 +99,7 @@ def process(job):
 
 
 def _sync(unit, amount):
+    es.init_index("tasks_components_coverage")
     session_db = dci_db.get_session_db()
     limit = 100
     offset = 0
@@ -124,11 +128,11 @@ def _sync(unit, amount):
             logger.info("process job %s" % job["id"])
             try:
                 current_components_processed = process(job)
+                components_processed.update(current_components_processed)
             except Exception as e:
                 logger.error(
                     "error while processing job '%s': %s" % (job["id"], str(e))
                 )
-            components_processed.update(current_components_processed)
         offset += limit
 
     # if a component is not in the component_processsed_ids set
@@ -148,7 +152,7 @@ def _sync(unit, amount):
 
 
 def synchronize(_lock_synchronization):
-    _sync("hours", 2)
+    _sync("hours", 6)
     _lock_synchronization.release()
 
 

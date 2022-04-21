@@ -29,12 +29,9 @@ from dciclient.v1.api import file as dci_file
 
 import logging
 import pandas as pd
-import requests
 
 
 logger = logging.getLogger()
-
-_ES_URL = config.CONFIG.get("ELASTICSEARCH_URL")
 
 
 def junit_to_dict(junit):
@@ -92,25 +89,18 @@ def _process_sync(api_conn, job):
     es.push("tasks_junit", job, job["id"])
 
 
-def _init_index(index):
-    url = "%s/%s" % (_ES_URL, index)
-    result = requests.get(url)
-    if result.status_code == 404:
-        url = "%s/%s/_mapping" % (_ES_URL, index)
-        requests.put(
-            url,
-            json={
-                "properties": {
-                    "topic_id": {"type": "keyword"},
-                    "remoteci_id": {"type": "keyword"},
-                    "files.junit_content": {"enabled": False},
-                }
-            },
-        )
-
-
 def _sync(unit, amount):
-    _init_index("tasks_junit")
+    es.init_index(
+        "tasks_junit",
+        json={
+            "properties": {
+                "topic_id": {"type": "keyword"},
+                "remoteci_id": {"type": "keyword"},
+                "team_id": {"type": "keyword"},
+                "files.junit_content": {"enabled": False},
+            }
+        },
+    )
     session_db = dci_db.get_session_db()
     _config = config.get_config()
     api_conn = context.build_dci_context(
@@ -143,12 +133,12 @@ def _sync(unit, amount):
 
 
 def synchronize(_lock_synchronization):
-    _sync("hours", 2)
+    _sync("hours", 6)
     _lock_synchronization.release()
 
 
 def full_synchronize(_lock_synchronization):
-    _sync("weeks", 8)
+    _sync("weeks", 24)
     _lock_synchronization.release()
 
 
@@ -171,7 +161,7 @@ def filter_jobs(jobs, file_test_name):
     return res
 
 
-def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, test_name):
+def get_jobs_dataset(team_id, topic_id, start_date, end_date, remoteci_id, test_name):
 
     jobs_dataframes = []
     jobs_ids_dates = []
@@ -183,6 +173,7 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, test_name):
                     {"range": {"created_at": {"gte": start_date, "lt": end_date}}},
                     {"term": {"topic_id": topic_id}},
                     {"term": {"remoteci_id": remoteci_id}},
+                    {"term": {"team_id": team_id}},
                 ]
             }
         },
@@ -236,7 +227,12 @@ def topics_comparison(
     test_name,
 ):
     topic_1_jobs, _ = get_jobs_dataset(
-        topic_1_id, topic_1_start_date, topic_1_end_date, remoteci_1_id, test_name
+        team_1_id,
+        topic_1_id,
+        topic_1_start_date,
+        topic_1_end_date,
+        remoteci_1_id,
+        test_name,
     )
     if topic_1_baseline_computation == "mean":
         topic_1_jobs_computed = topic_1_jobs.mean()
@@ -247,7 +243,12 @@ def topics_comparison(
         topic_1_jobs_computed = topic_1_jobs.iloc[-1]
 
     topic_2_jobs, _ = get_jobs_dataset(
-        topic_2_id, topic_2_start_date, topic_2_end_date, remoteci_2_id, test_name
+        team_2_id,
+        topic_2_id,
+        topic_2_start_date,
+        topic_2_end_date,
+        remoteci_2_id,
+        test_name,
     )
     if topic_2_baseline_computation == "mean":
         topic_2_jobs = topic_2_jobs.mean().to_frame()

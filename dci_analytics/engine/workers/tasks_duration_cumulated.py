@@ -108,7 +108,7 @@ def _sync(unit, amount):
 
 
 def synchronize(_lock_synchronization):
-    _sync("hours", 2)
+    _sync("hours", 6)
     _lock_synchronization.release()
 
 

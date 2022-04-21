@@ -71,3 +71,14 @@ def update(index, data, doc_id):
             "error while updating document %s to index %s: %s"
             % (doc_id, index, res.text)
         )
+
+
+def init_index(index, json=None):
+    url = "%s/%s" % (_ES_URL, index)
+    result = requests.get(url)
+    if result.status_code == 404:
+        url = "%s/%s/_mapping" % (_ES_URL, index)
+        if json:
+            requests.put(url, json=json)
+        else:
+            requests.put(url)
