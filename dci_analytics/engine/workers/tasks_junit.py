@@ -21,6 +21,7 @@ from lxml import etree
 from dci.analytics import access_data_layer as a_d_l
 
 from dci_analytics.engine import elasticsearch as es
+from dci_analytics.engine import exceptions
 from dci_analytics.engine import dci_db
 from dci_analytics import config
 
@@ -234,6 +235,24 @@ def topics_comparison(
         remoteci_1_id,
         test_name,
     )
+    if not topic_1_jobs:
+        raise exceptions.DCIException(
+            (
+                "no jobs for: team_id {team_id}, "
+                + "topic_id {topic_id}, "
+                + "topic_start_date {topic_start_date}, "
+                + "topic_end_date {topic_end_date}, "
+                + "remoteci_id {remoteci_id}, "
+                + "test {test_name}"
+            ).format(
+                team_id=team_1_id,
+                topic_id=topic_1_id,
+                topic_start_date=topic_1_start_date,
+                topic_end_date=topic_1_end_date,
+                remoteci_id=remoteci_1_id,
+                test_name=test_name,
+            )
+        )
     if topic_1_baseline_computation == "mean":
         topic_1_jobs_computed = topic_1_jobs.mean()
     elif topic_1_baseline_computation == "median":
@@ -250,6 +269,24 @@ def topics_comparison(
         remoteci_2_id,
         test_name,
     )
+    if not topic_2_jobs:
+        raise exceptions.DCIException(
+            (
+                "no jobs for: team_id {team_id}, "
+                + "topic_id {topic_id}, "
+                + "topic_start_date {topic_start_date}, "
+                + "topic_end_date {topic_end_date}, "
+                + "remoteci_id {remoteci_id}, "
+                + "test {test_name}"
+            ).format(
+                team_id=team_2_id,
+                topic_id=topic_2_id,
+                topic_start_date=topic_2_start_date,
+                topic_end_date=topic_2_end_date,
+                remoteci_id=remoteci_2_id,
+                test_name=test_name,
+            )
+        )
     if topic_2_baseline_computation == "mean":
         topic_2_jobs = topic_2_jobs.mean().to_frame()
     elif topic_2_baseline_computation == "median":

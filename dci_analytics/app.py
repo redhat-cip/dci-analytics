@@ -20,6 +20,7 @@ import json
 import logging
 import threading
 
+from dci_analytics.engine import exceptions
 from dci_analytics.engine.workers import tasks_duration_cumulated
 from dci_analytics.engine.workers import tasks_components_coverage
 from dci_analytics.engine.workers import tasks_junit
@@ -39,6 +40,16 @@ logger.setLevel(logging.DEBUG)
 _LOCK_TASK_DURATION_CUMULATED = threading.Lock()
 _LOCK_TASK_COMPONENTS_COVERAGE = threading.Lock()
 _LOCK_TASK_JUNIT = threading.Lock()
+
+
+def handle_api_exception(api_exception):
+    response = flask.jsonify(api_exception.to_dict())
+    response.status_code = api_exception.status_code
+    logger.exception(api_exception)
+    return response
+
+
+app.register_error_handler(exceptions.DCIException, handle_api_exception)
 
 
 @app.route("/ok", strict_slashes=False)
