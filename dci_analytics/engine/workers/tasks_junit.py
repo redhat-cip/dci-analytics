@@ -191,8 +191,13 @@ def get_jobs_dataset(team_id, topic_id, start_date, end_date, remoteci_id, test_
     }
     while True:
         jobs = es.search_json("tasks_junit", body)
+        if "hits" not in jobs:
+            break
+        if "hits" not in jobs["hits"]:
+            break
         if not jobs:
             break
+        jobs = jobs["hits"]["hits"]
         jobs = filter_jobs(jobs, test_name)
         for j in jobs:
             df = pd.DataFrame(j["junit_content"], index=[j["id"]])

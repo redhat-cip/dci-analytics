@@ -52,14 +52,14 @@ def get(index, doc_id):
         return None
 
 
-def search(index, query=None, json=None):
+def search(index, query=None):
     res = requests.get("%s/%s/_search?%s" % (_ES_URL, index, query))
     return res.json()["hits"]["hits"]
 
 
 def search_json(index, json):
     res = requests.get("%s/%s/_search" % (_ES_URL, index), json=json)
-    return res.json()["hits"]["hits"]
+    return res.json()
 
 
 def update(index, data, doc_id):
