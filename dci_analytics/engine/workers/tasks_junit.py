@@ -240,7 +240,7 @@ def topics_comparison(
         remoteci_1_id,
         test_name,
     )
-    if not topic_1_jobs:
+    if topic_1_jobs is None:
         raise exceptions.DCIException(
             (
                 "no jobs for: team_id {team_id}, "
@@ -274,7 +274,7 @@ def topics_comparison(
         remoteci_2_id,
         test_name,
     )
-    if not topic_2_jobs:
+    if topic_2_jobs is None:
         raise exceptions.DCIException(
             (
                 "no jobs for: team_id {team_id}, "

@@ -224,6 +224,6 @@ def junit_topics_comparison():
                 "details": details,
             }
         ),
-        status=201,
+        status=200,
         content_type="application/json",
     )
