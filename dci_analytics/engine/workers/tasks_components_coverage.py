@@ -99,7 +99,14 @@ def process(job):
 
 
 def _sync(unit, amount):
-    es.init_index("tasks_components_coverage")
+    json = {
+        "properties": {
+            "topic_id": {"type": "keyword"},
+            "team_id": {"type": "keyword"},
+            "type": {"type": "keyword"},
+        }
+    }
+    es.init_index("tasks_components_coverage", json=json)
     session_db = dci_db.get_session_db()
     limit = 100
     offset = 0
