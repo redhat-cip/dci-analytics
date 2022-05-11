@@ -174,7 +174,6 @@ def get_jobs_dataset(team_id, topic_id, start_date, end_date, remoteci_id, test_
                     {"range": {"created_at": {"gte": start_date, "lt": end_date}}},
                     {"term": {"topic_id": topic_id}},
                     {"term": {"remoteci_id": remoteci_id}},
-                    {"term": {"team_id": team_id}},
                 ]
             }
         },
@@ -216,14 +215,12 @@ def get_jobs_dataset(team_id, topic_id, start_date, end_date, remoteci_id, test_
 
 
 def topics_comparison(
-    team_1_id,
     topic_1_id,
     topic_1_start_date,
     topic_1_end_date,
     remoteci_1_id,
     topic_1_baseline_computation,
     tags_1,
-    team_2_id,
     topic_2_id,
     topic_2_start_date,
     topic_2_end_date,
@@ -233,7 +230,6 @@ def topics_comparison(
     test_name,
 ):
     topic_1_jobs, _ = get_jobs_dataset(
-        team_1_id,
         topic_1_id,
         topic_1_start_date,
         topic_1_end_date,
@@ -243,14 +239,12 @@ def topics_comparison(
     if topic_1_jobs is None:
         raise exceptions.DCIException(
             (
-                "no jobs for: team_id {team_id}, "
-                + "topic_id {topic_id}, "
+                "no jobs for: topic_id {topic_id}, "
                 + "topic_start_date {topic_start_date}, "
                 + "topic_end_date {topic_end_date}, "
                 + "remoteci_id {remoteci_id}, "
                 + "test {test_name}"
             ).format(
-                team_id=team_1_id,
                 topic_id=topic_1_id,
                 topic_start_date=topic_1_start_date,
                 topic_end_date=topic_1_end_date,
@@ -267,7 +261,6 @@ def topics_comparison(
         topic_1_jobs_computed = topic_1_jobs.iloc[-1]
 
     topic_2_jobs, _ = get_jobs_dataset(
-        team_2_id,
         topic_2_id,
         topic_2_start_date,
         topic_2_end_date,
@@ -277,14 +270,12 @@ def topics_comparison(
     if topic_2_jobs is None:
         raise exceptions.DCIException(
             (
-                "no jobs for: team_id {team_id}, "
-                + "topic_id {topic_id}, "
+                "no jobs for: topic_id {topic_id}, "
                 + "topic_start_date {topic_start_date}, "
                 + "topic_end_date {topic_end_date}, "
                 + "remoteci_id {remoteci_id}, "
                 + "test {test_name}"
             ).format(
-                team_id=team_2_id,
                 topic_id=topic_2_id,
                 topic_start_date=topic_2_start_date,
                 topic_end_date=topic_2_end_date,

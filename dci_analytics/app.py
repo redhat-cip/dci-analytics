@@ -139,7 +139,6 @@ def tasks_junit_full_sync():
 
 @app.route("/junit_topics_comparison", strict_slashes=False, methods=["POST"])
 def junit_topics_comparison():
-    team_1_id = flask.request.json["team_1_id"]
     topic_1_id = flask.request.json["topic_1_id"]
     topic_1_start_date = flask.request.json["topic_1_start_date"]
     topic_1_end_date = flask.request.json["topic_1_end_date"]
@@ -147,7 +146,6 @@ def junit_topics_comparison():
     topic_1_baseline_computation = flask.request.json["topic_1_baseline_computation"]
     tags_1 = flask.request.json["tags_1"]
 
-    team_2_id = flask.request.json["team_2_id"]
     topic_2_id = flask.request.json["topic_2_id"]
     topic_2_start_date = flask.request.json["topic_2_start_date"]
     topic_2_end_date = flask.request.json["topic_2_end_date"]
@@ -157,14 +155,12 @@ def junit_topics_comparison():
     tags_2 = flask.request.json["tags_2"]
 
     comparison = tasks_junit.topics_comparison(
-        team_1_id,
         topic_1_id,
         topic_1_start_date,
         topic_1_end_date,
         remoteci_1_id,
         topic_1_baseline_computation,
         tags_1,
-        team_2_id,
         topic_2_id,
         topic_2_start_date,
         topic_2_end_date,
