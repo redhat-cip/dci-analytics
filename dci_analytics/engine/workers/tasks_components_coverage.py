@@ -82,7 +82,8 @@ def process(job):
             f_c = format_component_coverage(c, team, job)
             row = es.search(
                 "tasks_components_coverage",
-                "q=id:%s AND team_id:%s" % (f_c["id"], team),
+                "q=id:%s AND team_id:%s AND topic_id:%s"
+                % (f_c["id"], team, job["topic_id"]),
             )
             row = row[0] if len(row) > 0 else []
             if not row:
