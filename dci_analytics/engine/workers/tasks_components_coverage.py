@@ -44,28 +44,26 @@ def format_component_coverage(component, team_id, job=None):
         "failed_jobs": [],
     }
     if job is not None:
+        _job = {"id": job["id"], "created_at": job["created_at"], "name": job["name"]}
         if job["status"] == "success":
-            res["success_jobs"] = [{"id": job["id"], "created_at": job["created_at"]}]
+            res["success_jobs"] = [_job]
         else:
-            res["failed_jobs"] = [{"id": job["id"], "created_at": job["created_at"]}]
+            res["failed_jobs"] = [_job]
     return res
 
 
 def update_component_coverage(job, component_coverage):
     data = {}
+    _job = {"id": job["id"], "created_at": job["created_at"], "name": job["name"]}
     if job["status"] == "success":
         success_job_ids = {cc["id"] for cc in component_coverage["success_jobs"]}
         if job["id"] not in success_job_ids:
-            data["success_jobs"] = component_coverage["success_jobs"] + [
-                {"id": job["id"], "created_at": job["created_at"]}
-            ]
+            data["success_jobs"] = component_coverage["success_jobs"] + [_job]
             return True, data
     else:
         failed_job_ids = {cc["id"] for cc in component_coverage["failed_jobs"]}
         if job["id"] not in failed_job_ids:
-            data["failed_jobs"] = component_coverage["failed_jobs"] + [
-                {"id": job["id"], "created_at": job["created_at"]}
-            ]
+            data["failed_jobs"] = component_coverage["failed_jobs"] + [_job]
             return True, data
     return False, data
 

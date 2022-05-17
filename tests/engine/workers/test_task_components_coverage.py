@@ -23,6 +23,7 @@ def test_update_component_coverage():
         "status": "success",
         "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e",
         "created_at": "2022-01-14T00:40:17.145315",
+        "name": "job_name",
     }
     c_c = {"success_jobs": [], "failed_jobs": []}
     do_update, data = tasks_components_coverage.update_component_coverage(job, c_c)
@@ -35,6 +36,7 @@ def test_update_component_coverage():
         "status": "failure",
         "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e",
         "created_at": "2022-01-15T00:40:17.145315",
+        "name": "job_name",
     }
     c_c = {
         "success_jobs": [],
@@ -52,7 +54,12 @@ def test_update_component_coverage():
         "41d1fb0c-c0e0-4b8d-938e-25e0b0a2682f",
     }
 
-    job = {"status": "success", "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e"}
+    job = {
+        "status": "success",
+        "id": "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e",
+        "created_at": "2022-01-15T00:40:17.145315",
+        "name": "job_name",
+    }
     c_c = {
         "success_jobs": [
             {
