@@ -162,7 +162,7 @@ def filter_jobs(jobs, file_test_name):
     return res
 
 
-def get_jobs_dataset(team_id, topic_id, start_date, end_date, remoteci_id, test_name):
+def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_name):
 
     jobs_dataframes = []
     jobs_ids_dates = []
@@ -188,6 +188,10 @@ def get_jobs_dataset(team_id, topic_id, start_date, end_date, remoteci_id, test_
             }
         ],
     }
+    if tags:
+        for t in tags:
+            body["query"]["bool"]["must"].append({"term": {"tags": t}})
+
     while True:
         jobs = es.search_json("tasks_junit", body)
         if "hits" not in jobs:
@@ -234,6 +238,7 @@ def topics_comparison(
         topic_1_start_date,
         topic_1_end_date,
         remoteci_1_id,
+        tags_1,
         test_name,
     )
     if topic_1_jobs is None:
@@ -265,6 +270,7 @@ def topics_comparison(
         topic_2_start_date,
         topic_2_end_date,
         remoteci_2_id,
+        tags_2,
         test_name,
     )
     if topic_2_jobs is None:
