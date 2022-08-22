@@ -20,10 +20,12 @@ import json
 import logging
 import threading
 
+from dci_analytics.engine import elasticsearch as es
 from dci_analytics.engine import exceptions
 from dci_analytics.engine.workers import tasks_duration_cumulated
 from dci_analytics.engine.workers import tasks_components_coverage
 from dci_analytics.engine.workers import tasks_junit
+from dci_analytics.engine.workers import tasks_pipeline
 
 
 app = flask.Flask(__name__)
@@ -137,6 +139,17 @@ def tasks_junit_full_sync():
     return lock_and_run(_LOCK_TASK_JUNIT, tasks_junit.full_synchronize)
 
 
+@app.route("/pipelines_status/sync", strict_slashes=False, methods=["POST"])
+def tasks_telco_sync():
+    return lock_and_run(_LOCK_TASK_JUNIT, tasks_pipeline.synchronize)
+
+
+@app.route("/pipelines_status/full_sync", strict_slashes=False, methods=["POST"])
+def tasks_telco_full_sync():
+    logger.info("running full synchronization")
+    return lock_and_run(_LOCK_TASK_JUNIT, tasks_pipeline.full_synchronize)
+
+
 @app.route("/junit_topics_comparison", strict_slashes=False, methods=["POST"])
 def junit_topics_comparison():
     topic_1_id = flask.request.json["topic_1_id"]
@@ -219,6 +232,113 @@ def junit_topics_comparison():
                 "intervals": [[i, j] for i, j in intervals],
                 "details": details,
             }
+        ),
+        status=200,
+        content_type="application/json",
+    )
+
+
+@app.route("/pipelines_status", strict_slashes=False, methods=["POST"])
+def pipelines_status():
+    start_date = flask.request.json["start_date"]
+    end_date = flask.request.json["end_date"]
+    pipelines_names = flask.request.json.get("pipelines_names", [])
+    teams_ids = flask.request.json.get("teams_ids", [])
+    size = 10
+    body = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "range": {
+                            "pipeline.created_at": {"gte": start_date, "lte": end_date}
+                        }
+                    },
+                ]
+            }
+        },
+        "from": 0,
+        "size": size,
+        "sort": [
+            {
+                "created_at": {
+                    "order": "desc",
+                    "format": "strict_date_optional_time_nanos",
+                }
+            }
+        ],
+    }
+
+    if teams_ids:
+        team_id_should_query = {"bool": {"should": []}}
+        for team_id in teams_ids:
+            team_id_should_query["bool"]["should"].append(
+                {"term": {"team_id": team_id}}
+            )
+        body["query"]["bool"]["must"].append(team_id_should_query)
+
+    if pipelines_names:
+        pipeline_name_should_query = {"bool": {"should": []}}
+        for pipeline_name in pipelines_names:
+            pipeline_name_should_query["bool"]["should"].append(
+                {"term": {"pipeline.name": pipeline_name}}
+            )
+        body["query"]["bool"]["must"].append(pipeline_name_should_query)
+
+    jobs = []
+    while True:
+        _jobs = es.search_json("pipelines_status", body)
+        if "hits" not in _jobs:
+            break
+        if "hits" not in _jobs["hits"]:
+            break
+        if not _jobs["hits"]["hits"]:
+            break
+        for j in _jobs["hits"]["hits"]:
+            jobs.append(j["_source"])
+        body["from"] += size
+
+    def _get_components_headers(jobs):
+        headers = []
+        for j in jobs:
+            for c in j["components"]:
+                cpn = c["canonical_project_name"]
+                if " " in cpn:
+                    cpn = c["canonical_project_name"].split(" ")[0]
+                elif ":" in cpn:
+                    cpn = c["canonical_project_name"].split(":")[0]
+                if cpn not in headers:
+                    headers.append(cpn)
+        return sorted(headers)
+
+    components_headers = _get_components_headers(jobs)
+    pipelines = {}
+    for job in jobs:
+        if job["pipeline"]["id"] not in pipelines:
+            pipelines[job["pipeline"]["id"]] = {
+                "jobs": [],
+                "created_at": job["pipeline"]["created_at"].split("T")[0],
+                "name": job["pipeline"]["name"],
+            }
+        if "files" in job:
+            job.pop("files")
+        if "jobstates" in job:
+            job.pop("jobstates")
+        job["components"] = tasks_pipeline.sort_components(
+            components_headers, job["components"]
+        )
+        pipelines[job["pipeline"]["id"]]["jobs"].append(job)
+
+    days = {}
+    for _, p in pipelines.items():
+        if p["created_at"] not in days:
+            days[p["created_at"]] = {"date": p["created_at"], "pipelines": [p]}
+        else:
+            days[p["created_at"]]["pipelines"].append(p)
+
+    return flask.Response(
+        json.dumps(
+            {"components_headers": components_headers, "days": list(days.values())}
         ),
         status=200,
         content_type="application/json",
