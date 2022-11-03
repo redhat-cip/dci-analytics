@@ -57,6 +57,16 @@ def format_tests(job):
     return tests
 
 
+def filter_components(components, components_types):
+    if not components_types:
+        return components
+    res = []
+    for c in components:
+        if c["type"] in components_types:
+            res.append(c)
+    return res
+
+
 def _process(job):
     if job["status"] not in {"success", "failure"}:
         return
