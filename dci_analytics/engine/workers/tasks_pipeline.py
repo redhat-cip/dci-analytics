@@ -44,6 +44,19 @@ def sort_components(headers, components):
     return res
 
 
+def format_tests(job):
+
+    tests = {"success": 0, "failures": 0, "errors": 0, "total": 0, "skips": 0}
+    for r in job["results"]:
+        tests["success"] += r["success"]
+        tests["failures"] += r["failures"]
+        tests["errors"] += r["errors"]
+        tests["total"] += r["total"]
+        tests["skips"] += r["skips"]
+
+    return tests
+
+
 def _process(job):
     if job["status"] not in {"success", "failure"}:
         return
