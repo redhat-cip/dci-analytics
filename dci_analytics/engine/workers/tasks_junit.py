@@ -16,7 +16,7 @@
 # under the License.
 
 
-from lxml import etree
+from xml.etree import ElementTree
 
 from dci.analytics import access_data_layer as a_d_l
 
@@ -28,6 +28,7 @@ from dci_analytics import config
 from dciclient.v1.api import context
 from dciclient.v1.api import file as dci_file
 
+import io
 import logging
 import pandas as pd
 
@@ -35,9 +36,11 @@ import pandas as pd
 logger = logging.getLogger()
 
 
-def junit_to_dict(junit):
-    def _process_testcases(testsuite, res):
+def junit_to_dict(file_descriptor, filename):
+    def _process_testsuite(testsuite, res):
         for tc in testsuite:
+            if tc.tag != "testcase":
+                continue
             classname = tc.get("classname")
             name = tc.get("name")
             if not classname or not name:
@@ -55,15 +58,11 @@ def junit_to_dict(junit):
 
     res = dict()
     try:
-        root = etree.fromstring(junit)
-        if root.tag == "testsuites":
-            for testsuite in root.findall("testsuite"):
-                _process_testcases(testsuite, res)
-        else:
-            _process_testcases(root, res)
-
-    except etree.XMLSyntaxError as e:
-        logger.error("XMLSyntaxError %s" % str(e))
+        for _, element in ElementTree.iterparse(file_descriptor):
+            if element.tag == "testsuite":
+                _process_testsuite(element, res)
+    except ElementTree.ParseError as e:
+        logger.error("ParseError %s: %s" % (filename, str(e)))
     return res
 
 
@@ -79,10 +78,14 @@ def _process_sync(api_conn, job):
         if f["state"] != "active":
             continue
         if f["mime"] == "application/junit":
-            junit_found = True
-            file_content = get_file_content(api_conn, f)
-            f["junit_content"] = junit_to_dict(file_content)
-            files.append(f)
+            try:
+                junit_found = True
+                file_content = get_file_content(api_conn, f)
+                file_descriptor = io.StringIO(file_content.decode("utf-8"))
+                f["junit_content"] = junit_to_dict(file_descriptor, f["name"])
+                files.append(f)
+            except Exception as e:
+                logger.error(f"Exception during sync: {e}")
     if not junit_found:
         return
     job["files"] = files
