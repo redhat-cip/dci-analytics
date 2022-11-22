@@ -19,6 +19,7 @@ import flask
 import json
 import logging
 import threading
+import pandas
 
 from dci_analytics.engine import elasticsearch as es
 from dci_analytics.engine import exceptions
@@ -221,9 +222,10 @@ def junit_topics_comparison():
     testcases = comparison.index.tolist()
     details = []
     for testcase in testcases:
-        details.append(
-            {"testcase": testcase, "value": comparison.loc[testcase, job_id]}
-        )
+        value = comparison.loc[testcase, job_id]
+        if pandas.isna(value):
+            value = "N/A"
+        details.append({"testcase": testcase, "value": value})
 
     return flask.Response(
         json.dumps(
