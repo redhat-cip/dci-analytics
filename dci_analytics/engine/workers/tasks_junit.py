@@ -116,7 +116,7 @@ def _sync(unit, amount):
     offset = 0
     while True:
         jobs = a_d_l.get_jobs(
-            session_db, offset, limit, unit=unit, amount=amount, state="success"
+            session_db, offset, limit, unit=unit, amount=amount, status="success"
         )
         if not jobs:
             logger.info("no jobs to get from the api")
