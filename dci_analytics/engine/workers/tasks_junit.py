@@ -122,7 +122,7 @@ def _sync(unit, amount):
         logger.info("got %s jobs from the api" % len(jobs))
         for job in jobs:
             logger.info("process job %s" % job["id"])
-            row = es.search("tasks_junit", "q=id:%s" % job["id"])
+            row = es.get("tasks_junit", job["id"])
             if row:
                 continue
             try:
