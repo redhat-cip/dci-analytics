@@ -208,14 +208,15 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
         jobs = jobs["hits"]["hits"]
         jobs = filter_jobs(jobs, test_name)
         for j in jobs:
-            df = pd.DataFrame(j["junit_content"], index=[j["id"]])
-            jobs_dataframes.append(df)
-            jobs_ids_dates.append(
-                {
-                    "date": j["created_at"],
-                    "id": j["id"],
-                }
-            )
+            if j["junit_content"]:
+                df = pd.DataFrame(j["junit_content"], index=[j["id"]])
+                jobs_dataframes.append(df)
+                jobs_ids_dates.append(
+                    {
+                        "date": j["created_at"],
+                        "id": j["id"],
+                    }
+                )
         body["from"] += size
 
     if not jobs_dataframes:
