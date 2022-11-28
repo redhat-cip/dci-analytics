@@ -19,7 +19,6 @@ import flask
 import json
 import logging
 import threading
-import pandas
 
 from dci_analytics.engine import elasticsearch as es
 from dci_analytics.engine import exceptions
@@ -185,54 +184,33 @@ def junit_topics_comparison():
     )
 
     # Bar chart, histogram
-    min = comparison.min() - 1.0
-    if isinstance(min, float):
-        min = int(min)
-    else:
-        min = int(min.min())
-
-    max = comparison.max() + 1.0
-    if isinstance(max, float):
-        max = int(max)
-    else:
-        max = int(max.max())
-
-    interval = int((max - min) / 25.0)
-    if interval == 0:
-        interval = 1
-    intervals = []
-    for i in range(min, max, interval):
-        intervals.append((i, i + interval))
+    intervals = [(-999, -100)]
+    for i in range(-100, 100, 5):
+        intervals.append((i, i + 5))
+    intervals.append((100, 999))
     intervals.sort()
     result = {}
+
     for i in intervals:
         result[i] = 0
-    for i in range(0, comparison.shape[0]):
-        for j in range(0, comparison.shape[1]):
-            value = comparison.iloc[i, j]
-            for inter in intervals:
-                if value >= inter[0] and value < inter[1]:
-                    result[inter] += 1
-    values = []
-    for inter in intervals:
-        values.append(result[inter])
 
-    job_id = comparison.columns.tolist()[0]
-    comparison.sort_values(by=job_id, ascending=False, inplace=True)
-    testcases = comparison.index.tolist()
-    details = []
-    for testcase in testcases:
-        value = comparison.loc[testcase, job_id]
-        if pandas.isna(value):
-            value = "N/A"
-        details.append({"testcase": testcase, "value": value})
+    for value in comparison:
+        for inter in intervals:
+            if value >= inter[0] and value < inter[1]:
+                result[inter] += 1
+    values = result.values()
+    comparison.sort_values(ascending=False, inplace=True)
+
+    comparison_jsonable = []
+    for k, v in comparison.items():
+        comparison_jsonable.append({k: v})
 
     return flask.Response(
         json.dumps(
             {
-                "values": values,
+                "values": list(values),
                 "intervals": [[i, j] for i, j in intervals],
-                "details": details,
+                "details": comparison_jsonable,
             }
         ),
         status=200,

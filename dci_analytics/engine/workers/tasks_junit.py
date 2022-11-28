@@ -224,6 +224,23 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
     return pd.concat(jobs_dataframes), jobs_ids_dates
 
 
+def generate_bar_chart_data(tests):
+    index = [v for v in range(-95, 96, 10)]
+    res = [0] * 20
+    for v in tests.values():
+        for i, vi in enumerate(index):
+            if v < -95:
+                res[0] += 1
+                break
+            elif v > 95:
+                res[19] += 1
+                break
+            elif v <= vi:
+                res[i - 1] += 1
+                break
+    return res
+
+
 def topics_comparison(
     topic_1_id,
     topic_1_start_date,
@@ -296,21 +313,12 @@ def topics_comparison(
             )
         )
     if topic_2_baseline_computation == "mean":
-        topic_2_jobs = topic_2_jobs.mean().to_frame()
+        topic_2_jobs_computed = topic_2_jobs.mean()
     elif topic_2_baseline_computation == "median":
-        topic_2_jobs = topic_2_jobs.median().to_frame()
+        topic_2_jobs_computed = topic_2_jobs.median()
     else:
         # use only the latest job results
-        topic_2_jobs = topic_2_jobs.iloc[-1:].T
+        topic_2_jobs_computed = topic_2_jobs.iloc[-1:].T
 
-    def delta(lign):
-        if lign.name not in topic_1_jobs.columns.values:
-            return "N/A"
-        try:
-            diff = lign - topic_1_jobs_computed[lign.name]
-            return (diff * 100.0) / topic_1_jobs_computed[lign.name]
-        except Exception as e:
-            logger.error("calculation error: %s" % str(e))
-            return "N/A"
-
-    return topic_2_jobs.apply(delta, axis=1)
+    diff = topic_2_jobs_computed - topic_1_jobs_computed
+    return (diff * 100) / topic_1_jobs_computed
