@@ -203,7 +203,7 @@ def junit_topics_comparison():
 
     comparison_jsonable = []
     for k, v in comparison.items():
-        comparison_jsonable.append({k: v})
+        comparison_jsonable.append({"testcase": k, "value": v})
 
     return flask.Response(
         json.dumps(

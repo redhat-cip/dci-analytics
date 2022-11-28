@@ -286,7 +286,8 @@ def topics_comparison(
         topic_1_jobs_computed = topic_1_jobs.median()
     else:
         # use only the latest job results
-        topic_1_jobs_computed = topic_1_jobs.iloc[-1]
+        topic_1_jobs_computed = topic_1_jobs.iloc[-1].T
+    topic_1_jobs_computed = topic_1_jobs_computed.dropna()
 
     topic_2_jobs, _ = get_jobs_dataset(
         topic_2_id,
@@ -319,6 +320,7 @@ def topics_comparison(
     else:
         # use only the latest job results
         topic_2_jobs_computed = topic_2_jobs.iloc[-1:].T
+    topic_2_jobs_computed = topic_2_jobs_computed.dropna()
 
     diff = topic_2_jobs_computed - topic_1_jobs_computed
-    return (diff * 100) / topic_1_jobs_computed
+    return ((diff * 100) / topic_1_jobs_computed).dropna()
