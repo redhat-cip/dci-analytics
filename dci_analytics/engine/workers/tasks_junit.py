@@ -227,7 +227,7 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
 def generate_bar_chart_data(tests):
     index = [v for v in range(-95, 96, 10)]
     res = [0] * 20
-    for v in tests.values():
+    for _, v in tests.items():
         for i, vi in enumerate(index):
             if v < -95:
                 res[0] += 1

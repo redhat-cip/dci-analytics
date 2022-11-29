@@ -184,22 +184,8 @@ def junit_topics_comparison():
     )
 
     # Bar chart, histogram
-    intervals = [(-999, -100)]
-    for i in range(-100, 100, 5):
-        intervals.append((i, i + 5))
-    intervals.append((100, 999))
-    intervals.sort()
-    result = {}
-
-    for i in intervals:
-        result[i] = 0
-
-    for value in comparison:
-        for inter in intervals:
-            if value >= inter[0] and value < inter[1]:
-                result[inter] += 1
-    values = result.values()
     comparison.sort_values(ascending=False, inplace=True)
+    values = tasks_junit.generate_bar_chart_data(comparison)
 
     comparison_jsonable = []
     for k, v in comparison.items():
@@ -209,7 +195,7 @@ def junit_topics_comparison():
         json.dumps(
             {
                 "values": list(values),
-                "intervals": [[i, j] for i, j in intervals],
+                "intervals": [v for v in range(-95, 96, 10)],
                 "details": comparison_jsonable,
             }
         ),
