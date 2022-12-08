@@ -176,7 +176,7 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
         "query": {
             "bool": {
                 "must": [
-                    {"range": {"created_at": {"gte": start_date, "lt": end_date}}},
+                    {"range": {"created_at": {"gte": start_date, "lte": end_date}}},
                     {"term": {"topic_id": topic_id}},
                     {"term": {"remoteci_id": remoteci_id}},
                 ]
