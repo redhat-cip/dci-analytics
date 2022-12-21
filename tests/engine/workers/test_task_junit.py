@@ -16,7 +16,10 @@
 # under the License.
 
 
+from dci_analytics.engine import exceptions
 from dci_analytics.engine.workers import tasks_junit
+
+import pytest
 
 
 def test_generate_bar_chart_data():
@@ -37,3 +40,20 @@ def test_generate_bar_chart_data():
     assert res[9] == 1
     assert res[14] == 1
     assert res[0] == 2
+
+
+def test_dates():
+    topic_1_start_date = "2022-12-01"
+    topic_1_end_date = "2022-12-10"
+    topic_2_start_date = "2022-12-01"
+    topic_2_end_date = "2022-12-10"
+
+    tasks_junit.check_dates(
+        topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
+    )
+
+    topic_1_start_date, topic_1_end_date = topic_1_end_date, topic_1_start_date
+    with pytest.raises(exceptions.DCIException):
+        tasks_junit.check_dates(
+            topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
+        )

@@ -167,6 +167,10 @@ def junit_topics_comparison():
     topic_2_baseline_computation = flask.request.json["topic_2_baseline_computation"]
     tags_2 = flask.request.json["tags_2"]
 
+    tasks_junit.check_dates(
+        topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
+    )
+
     comparison = tasks_junit.topics_comparison(
         topic_1_id,
         topic_1_start_date,

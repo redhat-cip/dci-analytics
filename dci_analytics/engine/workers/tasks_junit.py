@@ -15,7 +15,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-
+from datetime import datetime as dt
 from xml.etree import ElementTree
 
 from dci.analytics import access_data_layer as a_d_l
@@ -324,3 +324,21 @@ def topics_comparison(
 
     diff = topic_2_jobs_computed - topic_1_jobs_computed
     return ((diff * 100) / topic_1_jobs_computed).dropna()
+
+
+def check_dates(
+    topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
+):
+    date_topic_1_start_date = dt.strptime(topic_1_start_date, "%Y-%m-%d")
+    date_topic_1_end_date = dt.strptime(topic_1_end_date, "%Y-%m-%d")
+    if date_topic_1_start_date > date_topic_1_end_date:
+        raise exceptions.DCIException(
+            "topic_1_end_date is anterior to topic_1_start_date"
+        )
+
+    date_topic_2_start_date = dt.strptime(topic_2_start_date, "%Y-%m-%d")
+    date_topic_2_end_date = dt.strptime(topic_2_end_date, "%Y-%m-%d")
+    if date_topic_2_start_date > date_topic_2_end_date:
+        raise exceptions.DCIException(
+            "topic_2_end_date is anterior to topic_2_start_date"
+        )
