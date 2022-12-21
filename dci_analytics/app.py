@@ -171,7 +171,7 @@ def junit_topics_comparison():
         topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
     )
 
-    comparison = tasks_junit.topics_comparison(
+    comparison, len_jobs_topic_1, len_jobs_topic_2 = tasks_junit.topics_comparison(
         topic_1_id,
         topic_1_start_date,
         topic_1_end_date,
@@ -199,8 +199,10 @@ def junit_topics_comparison():
         json.dumps(
             {
                 "values": list(values),
-                "intervals": [v for v in range(-95, 96, 10)],
+                "intervals": [v for v in range(-100, 101, 10)],
                 "details": comparison_jsonable,
+                "len_jobs_topic_1": len_jobs_topic_1,
+                "len_jobs_topic_2": len_jobs_topic_2,
             }
         ),
         status=200,

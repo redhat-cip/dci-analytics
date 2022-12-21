@@ -170,7 +170,6 @@ def filter_jobs(jobs, file_test_name):
 def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_name):
 
     jobs_dataframes = []
-    jobs_ids_dates = []
     size = 5
     body = {
         "query": {
@@ -211,28 +210,22 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
             if j["junit_content"]:
                 df = pd.DataFrame(j["junit_content"], index=[j["id"]])
                 jobs_dataframes.append(df)
-                jobs_ids_dates.append(
-                    {
-                        "date": j["created_at"],
-                        "id": j["id"],
-                    }
-                )
         body["from"] += size
 
     if not jobs_dataframes:
         return None, None
-    return pd.concat(jobs_dataframes), jobs_ids_dates
+    return pd.concat(jobs_dataframes), len(jobs_dataframes)
 
 
 def generate_bar_chart_data(tests):
-    index = [v for v in range(-95, 96, 10)]
+    index = [v for v in range(-100, 101, 10)]
     res = [0] * 20
     for _, v in tests.items():
         for i, vi in enumerate(index):
-            if v < -95:
+            if v < -100:
                 res[0] += 1
                 break
-            elif v > 95:
+            elif v > 100:
                 res[19] += 1
                 break
             elif v <= vi:
@@ -256,7 +249,7 @@ def topics_comparison(
     tags_2,
     test_name,
 ):
-    topic_1_jobs, _ = get_jobs_dataset(
+    topic_1_jobs, len_jobs_topic_1 = get_jobs_dataset(
         topic_1_id,
         topic_1_start_date,
         topic_1_end_date,
@@ -289,7 +282,7 @@ def topics_comparison(
         topic_1_jobs_computed = topic_1_jobs.iloc[-1].T
     topic_1_jobs_computed = topic_1_jobs_computed.dropna()
 
-    topic_2_jobs, _ = get_jobs_dataset(
+    topic_2_jobs, len_jobs_topic_2 = get_jobs_dataset(
         topic_2_id,
         topic_2_start_date,
         topic_2_end_date,
@@ -323,7 +316,11 @@ def topics_comparison(
     topic_2_jobs_computed = topic_2_jobs_computed.dropna()
 
     diff = topic_2_jobs_computed - topic_1_jobs_computed
-    return ((diff * 100) / topic_1_jobs_computed).dropna()
+    return (
+        ((diff * 100) / topic_1_jobs_computed).dropna(),
+        len_jobs_topic_1,
+        len_jobs_topic_2,
+    )
 
 
 def check_dates(

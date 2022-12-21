@@ -25,21 +25,21 @@ import pytest
 def test_generate_bar_chart_data():
     tests = {
         "test_1": -200,
-        "test_2": -96,
-        "test_3": -80,
+        "test_2": -105,
+        "test_3": -75,
         "test_4": 5,
-        "test_5": 50,
-        "test_6": 70,
+        "test_5": 55,
+        "test_6": 77,
         "test_7": 120,
     }
 
     res = tasks_junit.generate_bar_chart_data(tests)
-    assert res[16] == 1
-    assert res[19] == 1
-    assert res[1] == 1
-    assert res[9] == 1
-    assert res[14] == 1
     assert res[0] == 2
+    assert res[2] == 1
+    assert res[10] == 1
+    assert res[15] == 1
+    assert res[17] == 1
+    assert res[19] == 1
 
 
 def test_dates():
