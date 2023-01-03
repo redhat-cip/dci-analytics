@@ -15,7 +15,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from dci_analytics.engine.workers import tasks_components_coverage
+from dci_analytics.synchronizers import components_coverage
 
 
 def test_update_component_coverage():
@@ -26,7 +26,7 @@ def test_update_component_coverage():
         "name": "job_name",
     }
     c_c = {"success_jobs": [], "failed_jobs": []}
-    do_update, data = tasks_components_coverage.update_component_coverage(job, c_c)
+    do_update, data = components_coverage.update_component_coverage(job, c_c)
     assert do_update == True  # noqa
     assert {j["id"] for j in data["success_jobs"]} == {
         "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e"
@@ -47,7 +47,7 @@ def test_update_component_coverage():
             }
         ],
     }
-    do_update, data = tasks_components_coverage.update_component_coverage(job, c_c)
+    do_update, data = components_coverage.update_component_coverage(job, c_c)
     assert do_update == True  # noqa
     assert {j["id"] for j in data["failed_jobs"]} == {
         "31d1fb0c-c0e0-4b8d-938e-25e0b0a2682e",
@@ -69,6 +69,6 @@ def test_update_component_coverage():
         ],
         "failed_jobs": [],
     }
-    do_update, data = tasks_components_coverage.update_component_coverage(job, c_c)
+    do_update, data = components_coverage.update_component_coverage(job, c_c)
     assert do_update == False  # noqa
     assert data == {}

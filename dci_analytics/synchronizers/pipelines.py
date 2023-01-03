@@ -17,54 +17,13 @@
 
 
 from dci.analytics import access_data_layer as a_d_l
-from dci_analytics.engine import elasticsearch as es
-from dci_analytics.engine import dci_db
+from dci_analytics import elasticsearch as es
+from dci_analytics import dci_db
 
 import logging
 
 
 logger = logging.getLogger(__name__)
-
-
-def sort_components(headers, components):
-    components = sorted(components, key=lambda c: c["canonical_project_name"])
-    component_length = len(components)
-    res = []
-    j = 0
-    for i in range(len(headers)):
-        h = headers[i]
-        if j < component_length:
-            if components[j]["canonical_project_name"].startswith(h):
-                res.append(components[j])
-                j += 1
-            else:
-                res.append(None)
-        else:
-            res.append(None)
-    return res
-
-
-def format_tests(job):
-
-    tests = {"success": 0, "failures": 0, "errors": 0, "total": 0, "skips": 0}
-    for r in job["results"]:
-        tests["success"] += r["success"]
-        tests["failures"] += r["failures"]
-        tests["errors"] += r["errors"]
-        tests["total"] += r["total"]
-        tests["skips"] += r["skips"]
-
-    return tests
-
-
-def filter_components(components, components_types):
-    if not components_types:
-        return components
-    res = []
-    for c in components:
-        if c["type"] in components_types:
-            res.append(c)
-    return res
 
 
 def _process(job):
@@ -123,11 +82,11 @@ def _sync(unit, amount):
     session_db.close()
 
 
-def synchronize(_lock_synchronization):
+def partial(_lock_synchronization):
     _sync("hours", 6)
     _lock_synchronization.release()
 
 
-def full_synchronize(_lock_synchronization):
+def full(_lock_synchronization):
     _sync("weeks", 24)
     _lock_synchronization.release()

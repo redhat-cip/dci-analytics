@@ -15,7 +15,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from dci_analytics.engine.workers import tasks_pipeline
+from dci_analytics.api import pipelines
 
 
 def test_sort_components():
@@ -25,13 +25,13 @@ def test_sort_components():
         {"canonical_project_name": "c fghij"},
         {"canonical_project_name": "a klmno"},
     ]
-    sorted_components = tasks_pipeline.sort_components(headers, components)
+    sorted_components = pipelines.sort_components(headers, components)
     assert sorted_components[0]["canonical_project_name"] == "a klmno"
     assert sorted_components[1]["canonical_project_name"] == "c fghij"
     assert sorted_components[2]["canonical_project_name"] == "d abcde"
 
     headers = ["a", "b", "c", "d"]
-    sorted_components = tasks_pipeline.sort_components(headers, components)
+    sorted_components = pipelines.sort_components(headers, components)
     assert sorted_components[0]["canonical_project_name"] == "a klmno"
     assert sorted_components[1] is None
     assert sorted_components[2]["canonical_project_name"] == "c fghij"

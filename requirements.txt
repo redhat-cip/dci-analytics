@@ -3,6 +3,7 @@ flask
 lxml
 requests
 pandas
+gunicorn
 SQLAlchemy
 SQLAlchemy-Utils
 git+http://softwarefactory-project.io/r/dci-control-server

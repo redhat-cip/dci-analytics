@@ -16,136 +16,18 @@
 # under the License.
 
 from datetime import datetime as dt
-from xml.etree import ElementTree
-
-from dci.analytics import access_data_layer as a_d_l
-
-from dci_analytics.engine import elasticsearch as es
-from dci_analytics.engine import exceptions
-from dci_analytics.engine import dci_db
-from dci_analytics import config
-
-from dciclient.v1.api import context
-from dciclient.v1.api import file as dci_file
-
-import io
+import json
 import logging
+
+from dci_analytics import elasticsearch as es
+from dci_analytics.api import api
+from dci_analytics import exceptions
+
+import flask
 import pandas as pd
 
 
 logger = logging.getLogger()
-
-
-def junit_to_dict(file_descriptor, filename):
-    def _process_testsuite(testsuite, res):
-        for tc in testsuite:
-            if tc.tag != "testcase":
-                continue
-            classname = tc.get("classname")
-            name = tc.get("name")
-            if not classname or not name:
-                continue
-            key = "%s/%s" % (tc.get("classname"), tc.get("name"))
-            key = key.strip()
-            key = key.replace(",", "_")
-            if tc.get("time"):
-                try:
-                    res[key] = float(tc.get("time"))
-                except Exception:
-                    res[key] = -1.0
-            else:
-                res[key] = -1.0
-
-    res = dict()
-    try:
-        for _, element in ElementTree.iterparse(file_descriptor):
-            if element.tag == "testsuite":
-                _process_testsuite(element, res)
-    except ElementTree.ParseError as e:
-        logger.error("ParseError %s: %s" % (filename, str(e)))
-    return res
-
-
-def get_file_content(api_conn, f):
-    r = dci_file.content(api_conn, f["id"])
-    return r.content
-
-
-def _process_sync(api_conn, job):
-    files = []
-    junit_found = False
-    for f in job["files"]:
-        if f["state"] != "active":
-            continue
-        if f["mime"] == "application/junit":
-            try:
-                junit_found = True
-                file_content = get_file_content(api_conn, f)
-                file_descriptor = io.StringIO(file_content.decode("utf-8"))
-                f["junit_content"] = junit_to_dict(file_descriptor, f["name"])
-                files.append(f)
-            except Exception as e:
-                logger.error(f"Exception during sync: {e}")
-    if not junit_found:
-        return
-    job["files"] = files
-    job.pop("jobstates")
-    es.push("tasks_junit", job, job["id"])
-
-
-def _sync(unit, amount):
-    es.init_index(
-        "tasks_junit",
-        json={
-            "properties": {
-                "topic_id": {"type": "keyword"},
-                "remoteci_id": {"type": "keyword"},
-                "team_id": {"type": "keyword"},
-                "files.junit_content": {"enabled": False},
-            }
-        },
-    )
-    session_db = dci_db.get_session_db()
-    _config = config.get_config()
-    api_conn = context.build_dci_context(
-        dci_login=_config["DCI_LOGIN"],
-        dci_password=_config["DCI_PASSWORD"],
-        dci_cs_url=_config["DCI_CS_URL"],
-    )
-    limit = 10
-    offset = 0
-    while True:
-        jobs = a_d_l.get_jobs(
-            session_db, offset, limit, unit=unit, amount=amount, status="success"
-        )
-        if not jobs:
-            logger.info("no jobs to get from the api")
-            break
-        logger.info("got %s jobs from the api" % len(jobs))
-        for job in jobs:
-            logger.info("process job %s" % job["id"])
-            row = es.get("tasks_junit", job["id"])
-            if row:
-                continue
-            try:
-                _process_sync(api_conn, job)
-            except Exception as e:
-                logger.error(
-                    "error while processing job '%s': %s" % (job["id"], str(e))
-                )
-        offset += limit
-
-    session_db.close()
-
-
-def synchronize(_lock_synchronization):
-    _sync("hours", 6)
-    _lock_synchronization.release()
-
-
-def full_synchronize(_lock_synchronization):
-    _sync("weeks", 12)
-    _lock_synchronization.release()
 
 
 def filter_jobs(jobs, file_test_name):
@@ -339,3 +221,63 @@ def check_dates(
         raise exceptions.DCIException(
             "topic_2_end_date is anterior to topic_2_start_date"
         )
+
+
+@api.route("/junit_topics_comparison", strict_slashes=False, methods=["POST"])
+def junit_topics_comparison():
+    topic_1_id = flask.request.json["topic_1_id"]
+    topic_1_start_date = flask.request.json["topic_1_start_date"]
+    topic_1_end_date = flask.request.json["topic_1_end_date"]
+    remoteci_1_id = flask.request.json["remoteci_1_id"]
+    topic_1_baseline_computation = flask.request.json["topic_1_baseline_computation"]
+    tags_1 = flask.request.json["tags_1"]
+
+    topic_2_id = flask.request.json["topic_2_id"]
+    topic_2_start_date = flask.request.json["topic_2_start_date"]
+    topic_2_end_date = flask.request.json["topic_2_end_date"]
+    test_name = flask.request.json["test_name"]
+    remoteci_2_id = flask.request.json["remoteci_2_id"]
+    topic_2_baseline_computation = flask.request.json["topic_2_baseline_computation"]
+    tags_2 = flask.request.json["tags_2"]
+
+    check_dates(
+        topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
+    )
+
+    comparison, len_jobs_topic_1, len_jobs_topic_2 = topics_comparison(
+        topic_1_id,
+        topic_1_start_date,
+        topic_1_end_date,
+        remoteci_1_id,
+        topic_1_baseline_computation,
+        tags_1,
+        topic_2_id,
+        topic_2_start_date,
+        topic_2_end_date,
+        remoteci_2_id,
+        topic_2_baseline_computation,
+        tags_2,
+        test_name,
+    )
+
+    # Bar chart, histogram
+    comparison.sort_values(ascending=False, inplace=True)
+    values = generate_bar_chart_data(comparison)
+
+    comparison_jsonable = []
+    for k, v in comparison.items():
+        comparison_jsonable.append({"testcase": k, "value": v})
+
+    return flask.Response(
+        json.dumps(
+            {
+                "values": list(values),
+                "intervals": [v for v in range(-100, 101, 10)],
+                "details": comparison_jsonable,
+                "len_jobs_topic_1": len_jobs_topic_1,
+                "len_jobs_topic_2": len_jobs_topic_2,
+            }
+        ),
+        status=200,
+        content_type="application/json",
+    )

@@ -18,8 +18,8 @@
 import logging
 
 from dci.analytics import access_data_layer as a_d_l
-from dci_analytics.engine import elasticsearch as es
-from dci_analytics.engine import dci_db
+from dci_analytics import elasticsearch as es
+from dci_analytics import dci_db
 from dci_analytics import config
 
 
@@ -157,11 +157,11 @@ def _sync(unit, amount):
     session_db.close()
 
 
-def synchronize(_lock_synchronization):
+def partial(_lock_synchronization):
     _sync("hours", 6)
     _lock_synchronization.release()
 
 
-def full_synchronize(_lock_synchronization):
+def full(_lock_synchronization):
     _sync("weeks", 24)
     _lock_synchronization.release()
