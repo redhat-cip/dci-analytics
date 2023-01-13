@@ -28,6 +28,10 @@ def test_generate_bar_chart_data():
         "test_1": -200,
         "test_2": -105,
         "test_3": -75,
+        "test_a": -53.28,
+        "test_b": -42,
+        "test_c": -41,
+        "test_d": -40.09,
         "test_4": 5,
         "test_5": 55,
         "test_6": 77,
@@ -36,10 +40,15 @@ def test_generate_bar_chart_data():
 
     res = junit.generate_bar_chart_data(tests)
     assert res[0] == 2
-    assert res[2] == 1
-    assert res[10] == 1
-    assert res[15] == 1
-    assert res[17] == 1
+    assert res[2] == 0
+    assert res[5] == 1
+    assert res[6] == 3
+    assert res[10] == 0
+    assert res[11] == 1
+    assert res[15] == 0
+    assert res[16] == 1
+    assert res[17] == 0
+    assert res[18] == 1
     assert res[19] == 1
 
 

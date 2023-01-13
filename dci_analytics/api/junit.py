@@ -110,8 +110,8 @@ def generate_bar_chart_data(tests):
             elif v > 100:
                 res[19] += 1
                 break
-            elif v <= vi:
-                res[i - 1] += 1
+            elif v < vi + 5:
+                res[i] += 1
                 break
     return res
 
