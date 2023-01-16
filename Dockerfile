@@ -24,4 +24,4 @@ RUN yum -y install git \
 ENV PYTHONPATH /opt/dci-analytics:/opt/dci-control-server
 EXPOSE 2345
 
-CMD ["gunicorn", "wsgi:application", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "debug", "--bind", "0.0.0.0:2345"]
+CMD ["gunicorn", "wsgi:application", "--reload", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "debug", "--bind", "0.0.0.0:2345"]
