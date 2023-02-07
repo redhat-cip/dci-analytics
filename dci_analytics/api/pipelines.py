@@ -92,7 +92,7 @@ def pipelines_status():
         "sort": [
             {
                 "created_at": {
-                    "order": "desc",
+                    "order": "asc",
                     "format": "strict_date_optional_time_nanos",
                 }
             }
