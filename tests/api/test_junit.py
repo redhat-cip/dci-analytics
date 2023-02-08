@@ -39,17 +39,28 @@ def test_generate_bar_chart_data():
     }
 
     res = junit.generate_bar_chart_data(tests)
+    assert len(res) == 22
+    # -200, -105
     assert res[0] == 2
-    assert res[2] == 0
+    # -75
+    assert res[3] == 1
+    # -53.28
     assert res[5] == 1
+    # -42, -41, -40.09
     assert res[6] == 3
-    assert res[10] == 0
+    # 5
     assert res[11] == 1
-    assert res[15] == 0
+    # 55
     assert res[16] == 1
-    assert res[17] == 0
+    # 77
     assert res[18] == 1
-    assert res[19] == 1
+    # 120
+    assert res[21] == 1
+
+    acc = 0
+    for r in res:
+        acc += r
+    assert acc == 11
 
 
 def test_dates():
