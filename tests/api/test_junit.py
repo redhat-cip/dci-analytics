@@ -38,8 +38,8 @@ def test_generate_bar_chart_data():
         "test_7": 120,
     }
 
-    res = junit.generate_bar_chart_data(tests)
-    assert len(res) == 22
+    intervals, res = junit.generate_bar_chart_data(tests)
+    assert len(intervals) == len(res)
     # -200, -105
     assert res[0] == 2
     # -75

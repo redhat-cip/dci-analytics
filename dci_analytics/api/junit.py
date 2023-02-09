@@ -108,20 +108,20 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
 
 
 def generate_bar_chart_data(tests):
-    index = [v for v in range(-110, 110, 10)]
-    res = [0] * len(index)
+    intervals = [v for v in range(-110, 110, 10)]
+    res = [0] * len(intervals)
     for _, v in tests.items():
-        for i, vi in enumerate(index):
-            if v < index[1]:
+        for i, vi in enumerate(intervals):
+            if v < intervals[1]:
                 res[0] += 1
                 break
-            elif v > index[len(index) - 1]:
-                res[len(index) - 1] += 1
+            elif v > intervals[len(intervals) - 1]:
+                res[len(intervals) - 1] += 1
                 break
             elif v < vi:
                 res[i - 1] += 1
                 break
-    return res
+    return intervals, res
 
 
 def topics_comparison(
@@ -270,7 +270,7 @@ def junit_topics_comparison():
 
     # Bar chart, histogram
     comparison.sort_values(ascending=False, inplace=True)
-    values = generate_bar_chart_data(comparison)
+    intervals, values = generate_bar_chart_data(comparison)
 
     comparison_jsonable = []
     for k, v in comparison.items():
@@ -280,7 +280,7 @@ def junit_topics_comparison():
         json.dumps(
             {
                 "values": list(values),
-                "intervals": [v for v in range(-100, 101, 10)],
+                "intervals": intervals,
                 "details": comparison_jsonable,
                 "len_jobs_topic_1": len_jobs_topic_1,
                 "len_jobs_topic_2": len_jobs_topic_2,
