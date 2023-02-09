@@ -67,3 +67,47 @@ def test_dates():
         junit.check_dates(
             topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
         )
+
+
+def test_filter_jobs():
+    jobs = [
+        {
+            "_source": {
+                "files": [
+                    {
+                        "name": "TeSt_1",
+                        "junit_content": "",
+                    }
+                ],
+                "id": "1",
+                "created_at": "",
+            }
+        },
+        {
+            "_source": {
+                "files": [
+                    {
+                        "name": "TeSt_2",
+                        "junit_content": "",
+                    }
+                ],
+                "id": "2",
+                "created_at": "",
+            }
+        },
+    ]
+
+    r = junit.filter_jobs(jobs, "TeSt_1")
+    assert len(r) == 1
+    assert r[0]["id"] == "1"
+
+    r = junit.filter_jobs(jobs, "Test_1")
+    assert len(r) == 1
+    assert r[0]["id"] == "1"
+
+    r = junit.filter_jobs(jobs, "test_1")
+    assert len(r) == 1
+    assert r[0]["id"] == "1"
+
+    r = junit.filter_jobs(jobs, "Test*")
+    assert len(r) == 2

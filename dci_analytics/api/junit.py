@@ -36,7 +36,16 @@ def filter_jobs(jobs, file_test_name):
     for j in jobs:
         j = j["_source"]
         for f in j["files"]:
-            if f["name"] == file_test_name:
+            _f_name = f["name"].strip().lower()
+            _f_test_name = file_test_name.strip().lower()
+
+            is_matching = False
+            if _f_test_name.endswith("*"):
+                _f_test_name = _f_test_name[:-1]
+                is_matching = _f_name.startswith(_f_test_name)
+            else:
+                is_matching = _f_name == _f_test_name
+            if is_matching:
                 j["junit_content"] = f["junit_content"]
                 res.append(
                     {
@@ -50,7 +59,6 @@ def filter_jobs(jobs, file_test_name):
 
 
 def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_name):
-
     jobs_dataframes = []
     size = 5
     body = {

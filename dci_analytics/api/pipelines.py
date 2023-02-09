@@ -45,7 +45,6 @@ def sort_components(headers, components):
 
 
 def compute_tests_results(job):
-
     tests = {"success": 0, "failures": 0, "errors": 0, "total": 0, "skips": 0}
     for r in job["results"]:
         tests["success"] += r["success"]

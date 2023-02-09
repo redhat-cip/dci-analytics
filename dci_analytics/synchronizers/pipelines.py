@@ -49,7 +49,6 @@ def _process(job):
 
 
 def _sync(unit, amount):
-
     es.init_index(
         "pipelines_status",
         json={
