@@ -76,7 +76,7 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
         "sort": [
             {
                 "created_at": {
-                    "order": "desc",
+                    "order": "asc",
                     "format": "strict_date_optional_time_nanos",
                 }
             }
@@ -124,7 +124,7 @@ def generate_bar_chart_data(tests):
     return intervals, res
 
 
-def topics_comparison(
+def comparison_data(
     topic_1_id,
     topic_1_start_date,
     topic_1_end_date,
@@ -205,11 +205,13 @@ def topics_comparison(
         topic_2_jobs_computed = topic_2_jobs.iloc[-1:].T
     topic_2_jobs_computed = topic_2_jobs_computed.dropna()
 
-    diff = topic_2_jobs_computed - topic_1_jobs_computed
     return (
-        ((diff * 100) / topic_1_jobs_computed).dropna(),
+        topic_1_jobs,
         len_jobs_topic_1,
+        topic_2_jobs,
         len_jobs_topic_2,
+        topic_1_jobs_computed,
+        topic_2_jobs_computed,
     )
 
 
@@ -252,7 +254,14 @@ def junit_topics_comparison():
         topic_1_start_date, topic_1_end_date, topic_2_start_date, topic_2_end_date
     )
 
-    comparison, len_jobs_topic_1, len_jobs_topic_2 = topics_comparison(
+    (
+        _,
+        len_jobs_topic_1,
+        topic_2_jobs,
+        len_jobs_topic_2,
+        topic_1_jobs_computed,
+        topic_2_jobs_computed,
+    ) = comparison_data(
         topic_1_id,
         topic_1_start_date,
         topic_1_end_date,
@@ -269,16 +278,44 @@ def junit_topics_comparison():
     )
 
     # Bar chart, histogram
+    diff = topic_2_jobs_computed - topic_1_jobs_computed
+    comparison = ((diff * 100) / topic_1_jobs_computed).dropna()
     comparison.sort_values(ascending=False, inplace=True)
     intervals, values = generate_bar_chart_data(comparison)
-
     comparison_jsonable = []
     for k, v in comparison.items():
         comparison_jsonable.append({"testcase": k, "value": v})
+    bar_chart = {
+        "values": list(values),
+        "intervals": intervals,
+        "details": comparison_jsonable,
+        "len_jobs_topic_1": len_jobs_topic_1,
+        "len_jobs_topic_2": len_jobs_topic_2,
+    }
+
+    # Trend percentage graph
+    evolution_percentage_value = 95
+    diff = topic_2_jobs - topic_1_jobs_computed
+    comparison = ((diff * 100) / topic_1_jobs_computed).dropna()
+    float_evolution_percentage_value = float(evolution_percentage_value) / 100.0
+    trend_values = []
+    for i in range(comparison.shape[0]):
+        job_column = []
+        for j in range(comparison.shape[1]):
+            value = comparison.iloc[i, j]
+            job_column.append(value)
+        job_column.sort()
+        index_percentage = int(len(job_column) * float_evolution_percentage_value)
+        if index_percentage >= len(job_column):
+            index_percentage = len(job_column) - 1
+        trend_values.append(job_column[index_percentage])
+    trend_percentage = {"job_ids": comparison.index.tolist(), "values": trend_values}
 
     return flask.Response(
         json.dumps(
             {
+                "bar_chart": bar_chart,
+                "trend_percentage": trend_percentage,
                 "values": list(values),
                 "intervals": intervals,
                 "details": comparison_jsonable,
