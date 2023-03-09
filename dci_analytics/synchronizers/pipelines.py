@@ -27,8 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 def _process(job):
-    if job["status"] not in {"success", "failure"}:
-        return
     if job["pipeline_id"] is None:
         logger.info("not a pipeline job")
         return
