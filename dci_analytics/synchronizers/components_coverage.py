@@ -32,7 +32,7 @@ def format_component_coverage(component, team_id, job=None):
     res = {
         "id": component["id"],
         "name": component["name"],
-        "canonical_project_name": component["canonical_project_name"],
+        "display_name": component["display_name"],
         "product_id": component.get("product_id", ""),
         "topic_id": component["topic_id"],
         "tags": component["tags"],

@@ -27,14 +27,14 @@ logger = logging.getLogger(__name__)
 
 
 def sort_components(headers, components):
-    components = sorted(components, key=lambda c: c["canonical_project_name"])
+    components = sorted(components, key=lambda c: c["display_name"])
     component_length = len(components)
     res = []
     j = 0
     for i in range(len(headers)):
         h = headers[i]
         if j < component_length:
-            if components[j]["canonical_project_name"].startswith(h):
+            if components[j]["display_name"].startswith(h):
                 res.append(components[j])
                 j += 1
             else:
@@ -140,13 +140,8 @@ def pipelines_status():
             for c in j["components"]:
                 if components_types and c["type"] not in components_types:
                     continue
-                cpn = c["canonical_project_name"]
-                if " " in cpn:
-                    cpn = c["canonical_project_name"].split(" ")[0]
-                elif ":" in cpn:
-                    cpn = c["canonical_project_name"].split(":")[0]
-                if cpn not in headers:
-                    headers.append(cpn)
+                d_p = c["display_name"]
+                headers.append(d_p)
         return sorted(headers)
 
     components_headers = _get_components_headers(jobs, components_types)
