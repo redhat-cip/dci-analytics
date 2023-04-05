@@ -69,6 +69,10 @@ def _sync(unit, amount):
         for job in jobs:
             logger.info("process job %s" % job["id"])
             try:
+                if "jobstates" in job:
+                    del job["jobstates"]
+                if "files" in job:
+                    del job["files"]
                 _process(job)
             except Exception as e:
                 logger.error(
