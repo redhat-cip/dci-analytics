@@ -69,8 +69,6 @@ def update_component_coverage(job, component_coverage):
 
 
 def process(job):
-    if "components" not in job:
-        return
     components = dict()
     job_components = job["components"]
     for c in job_components:
@@ -78,22 +76,14 @@ def process(job):
         components[c["id"]] = c
         for team in (job["team_id"], "red_hat"):
             f_c = format_component_coverage(c, team, job)
-            row = es.search(
-                "tasks_components_coverage",
-                "q=id:%s AND team_id:%s AND topic_id:%s"
-                % (f_c["id"], team, job["topic_id"]),
-            )
-            row = row[0] if len(row) > 0 else []
-            if not row:
-                if team == "red_hat":
-                    row_id = "red_hat-%s" % f_c["id"]
-                else:
-                    row_id = f_c["id"]
-                es.push("tasks_components_coverage", f_c, row_id)
+            _id = "%s-%s" % (team, f_c["id"])
+            doc = es.get("tasks_components_coverage", _id)
+            if not doc:
+                es.push("tasks_components_coverage", f_c, _id)
             else:
-                do_update, data = update_component_coverage(job, row["_source"])
+                do_update, data = update_component_coverage(job, doc)
                 if do_update:
-                    es.update("tasks_components_coverage", data, row["_id"])
+                    es.update("tasks_components_coverage", data, _id)
     return components
 
 
@@ -131,10 +121,11 @@ def _sync(unit, amount):
         if not jobs:
             break
         for job in jobs:
-            logger.info("process job %s" % job["id"])
             try:
+                logger.info("process job %s" % job["id"])
                 current_components_processed = process(job)
-                components_processed.update(current_components_processed)
+                if current_components_processed:
+                    components_processed.update(current_components_processed)
             except Exception as e:
                 logger.error(
                     "error while processing job '%s': %s" % (job["id"], str(e))
