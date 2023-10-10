@@ -90,9 +90,9 @@ def get_jobs_dataset(topic_id, start_date, end_date, remoteci_id, tags, test_nam
         jobs = es.search_json("tasks_junit", body)
         if "hits" not in jobs:
             break
-        if "hits" not in jobs["hits"]:
+        if not jobs["hits"]:
             break
-        if not jobs:
+        if "hits" not in jobs["hits"]:
             break
         jobs = jobs["hits"]["hits"]
         jobs = filter_jobs(jobs, test_name)
@@ -171,6 +171,9 @@ def comparison_data(
         # use only the latest job results
         topic_1_jobs_computed = topic_1_jobs.iloc[-1].T
     topic_1_jobs_computed = topic_1_jobs_computed.dropna()
+
+    # replace 0 values by 1 to avoid zero division
+    topic_1_jobs_computed.replace(0, 1, inplace=True)
 
     topic_2_jobs, len_jobs_topic_2 = get_jobs_dataset(
         topic_2_id,
