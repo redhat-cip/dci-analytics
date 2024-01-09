@@ -30,12 +30,14 @@ _LOCK_DURATION_CUMULATED = threading.Lock()
 _LOCK_COMPONENTS_COVERAGE = threading.Lock()
 _LOCK_JUNIT = threading.Lock()
 _LOCK_PIPELINES = threading.Lock()
+_LOCK_JOBS = threading.Lock()
 
 _LOCKS = {
     "duration_cumulated": _LOCK_DURATION_CUMULATED,
     "components_coverage": _LOCK_COMPONENTS_COVERAGE,
     "junit": _LOCK_JUNIT,
     "pipelines": _LOCK_PIPELINES,
+    "jobs": _LOCK_JOBS,
 }
 
 _VALID_SYNCHRONIZATION_TYPE = {"partial", "full"}
@@ -119,3 +121,9 @@ def junit_sync():
 def telco_sync():
     synchronization_type = _get_request_json_key("type", "partial")
     return _run_synchronization("pipelines", synchronization_type)
+
+
+@api.route("/synchronization/jobs", strict_slashes=False, methods=["POST"])
+def jobs_sync():
+    synchronization_type = _get_request_json_key("type", "partial")
+    return _run_synchronization("jobs", synchronization_type)

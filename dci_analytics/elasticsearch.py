@@ -53,8 +53,8 @@ def get(index, doc_id):
 
 
 def search(index, query=None):
-    res = requests.get("%s/%s/_search?%s" % (_ES_URL, index, query))
-    return res.json()["hits"]["hits"]
+    res = requests.get("%s/%s/_search?q=%s" % (_ES_URL, index, query))
+    return res.json()
 
 
 def search_json(index, json):
