@@ -7,4 +7,3 @@ gunicorn
 SQLAlchemy
 SQLAlchemy-Utils
 git+http://softwarefactory-project.io/r/dci-control-server
-git+http://softwarefactory-project.io/r/python-dciclient
