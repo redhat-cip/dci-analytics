@@ -43,7 +43,12 @@ def _sync(unit, amount):
         json={
             "properties": {
                 "team_id": {"type": "keyword"},
-                "components": {"properties": {"name": {"type": "keyword"}}},
+                "components": {
+                    "properties": {
+                        "name": {"type": "keyword"},
+                        "display_name": {"type": "keyword"},
+                    }
+                },
             }
         },
     )
