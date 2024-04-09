@@ -44,10 +44,11 @@ def _sync(unit, amount):
             "properties": {
                 "team_id": {"type": "keyword"},
                 "components": {
+                    "type": "nested",
                     "properties": {
                         "name": {"type": "keyword"},
                         "display_name": {"type": "keyword"},
-                    }
+                    },
                 },
             }
         },
