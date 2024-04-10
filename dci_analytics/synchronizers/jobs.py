@@ -34,6 +34,8 @@ def process(job):
     doc = es.get(_INDEX, _id)
     if not doc:
         es.push(_INDEX, job, _id)
+    else:
+        es.update(_INDEX, job, _id)
     return job
 
 
