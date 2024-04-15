@@ -28,12 +28,7 @@ logger = logging.getLogger(__name__)
 
 @api.route("/jobs", strict_slashes=False, methods=["GET"])
 def get_jobs():
-    args = flask.request.args.to_dict()
     values = flask.request.json
-    q = values["query"]["query_string"]["query"]
-    team_id = args["team_id"]
-    values["query"]["query_string"]["query"] = "team_id:%s AND (%s)" % (team_id, q)
-    values["_source"] = {"exclude": ["jobstates"]}
     _jobs = es.search_json("jobs", values)
 
     if "hits" not in _jobs:
