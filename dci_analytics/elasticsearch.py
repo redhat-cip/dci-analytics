@@ -83,3 +83,12 @@ def init_index(index, json=None):
             requests.put(url, json=json)
         else:
             requests.put(url)
+
+
+def update_index(index, json):
+    index_url = "%s/%s" % (_ES_URL, index)
+    result = requests.get(index_url)
+    if result.status_code != 200:
+        r = requests.put(index_url, json=json).json()
+        if "acknowledged" not in r:
+            logger.error(str(r))

@@ -40,21 +40,26 @@ def process(job):
 
 
 def _sync(unit, amount):
-    es.init_index(
+    es.update_index(
         "jobs",
         json={
-            "properties": {
-                "team_id": {"type": "keyword"},
-                "components": {
-                    "type": "nested",
-                    "properties": {
-                        "name": {"type": "keyword"},
-                        "display_name": {"type": "keyword"},
-                    },
+            "mappings": {
+                "dynamic_templates": [
+                    {
+                        "strings_as_keyword": {
+                            "match_mapping_type": "string",
+                            "mapping": {"type": "keyword"},
+                        },
+                    }
+                ],
+                "properties": {
+                    "comment": {"type": "text"},
+                    "components": {"type": "nested"},
                 },
             }
         },
     )
+
     session_db = dci_db.get_session_db()
     limit = 100
     offset = 0
