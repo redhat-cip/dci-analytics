@@ -6,4 +6,5 @@ pandas
 gunicorn
 SQLAlchemy
 SQLAlchemy-Utils
+urllib3
 git+http://softwarefactory-project.io/r/dci-control-server

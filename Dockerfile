@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 LABEL name="DCI Analytics" version="0.0.1"
 LABEL maintainer="DCI Team <distributed-ci@redhat.com>"
@@ -7,19 +7,17 @@ ENV LANG en_US.UTF-8
 
 RUN mkdir /opt/dci-control-server
 RUN mkdir /opt/dci-analytics
-ADD . /opt/dci-analytics/
+COPY . /opt/dci-analytics/
 WORKDIR /opt/dci-analytics
 
-COPY requirements.txt /tmp/requirements.txt
-RUN yum -y install git \
-    python3-devel python3-pip python3-setuptools gcc && \
-    yum clean all && \
+RUN microdnf update && \
+    microdnf -y install python3-pip python3-wheel git && \
+    microdnf -y install python3-devel gcc-c++ gcc && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -U tox && \
-    pip3 install --no-cache-dir -r /tmp/requirements.txt && \
-    # workaroud to fix ModuleNotFoundError: No module named 'urllib3.packages.six'
-    pip3 uninstall -y urllib3 && \
-    pip3 install urllib3
+    pip3 install --no-cache-dir -r requirements.txt && \
+    microdnf -y remove python3-devel gcc-c++ gcc && \
+    microdnf -y clean all
 
 ENV PYTHONPATH /opt/dci-analytics:/opt/dci-control-server
 EXPOSE 2345
