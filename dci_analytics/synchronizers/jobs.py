@@ -55,6 +55,10 @@ def _sync(unit, amount):
                 "properties": {
                     "comment": {"type": "text"},
                     "components": {"type": "nested"},
+                    "team": {"type": "nested"},
+                    "topic": {"type": "nested"},
+                    "pipeline": {"type": "nested"},
+                    "remoteci": {"type": "nested"},
                 },
             }
         },
