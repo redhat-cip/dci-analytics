@@ -59,6 +59,7 @@ def _sync(unit, amount):
                     "topic": {"type": "nested"},
                     "pipeline": {"type": "nested"},
                     "remoteci": {"type": "nested"},
+                    "keys_values": {"type": "nested"},
                 },
             }
         },
@@ -91,5 +92,5 @@ def partial(_lock_synchronization):
 
 
 def full(_lock_synchronization):
-    _sync("weeks", 12)
+    _sync("weeks", 52)
     _lock_synchronization.release()
