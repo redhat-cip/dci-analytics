@@ -32,11 +32,11 @@ def get_jobs():
     _jobs = es.search_json("jobs", values)
 
     if "hits" not in _jobs:
-        _jobs = []
+        _jobs = {}
     elif "hits" not in _jobs["hits"]:
-        _jobs = []
+        _jobs = {}
     elif not _jobs["hits"]["hits"]:
-        _jobs = []
+        _jobs = {}
 
     return flask.Response(
         json.dumps(_jobs),
