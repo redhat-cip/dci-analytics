@@ -31,7 +31,7 @@ def get_config():
         "POSTGRESQL_DATABASE": os.getenv("POSTGRESQL_DATABASE", "dci"),
         "DCI_LOGIN": os.getenv("DCI_LOGIN", "admin"),
         "DCI_PASSWORD": os.getenv("DCI_PASSWORD", "admin"),
-        "DCI_CS_URL": os.getenv("DCI_CS_URL", "http://127.0.0.1:5000"),
+        "DCI_CS_URL": os.getenv("DCI_CS_URL", "http://api:5000"),
     }
 
     return _config
