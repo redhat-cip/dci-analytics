@@ -26,18 +26,28 @@ from dci_analytics import exceptions
 
 logger = logging.getLogger(__name__)
 
-_LOCK_DURATION_CUMULATED = threading.Lock()
-_LOCK_COMPONENTS_COVERAGE = threading.Lock()
-_LOCK_JUNIT = threading.Lock()
-_LOCK_PIPELINES = threading.Lock()
-_LOCK_JOBS = threading.Lock()
+_LOCK_DURATION_CUMULATED_partial = threading.Lock()
+_LOCK_DURATION_CUMULATED_full = threading.Lock()
+_LOCK_COMPONENTS_COVERAGE_partial = threading.Lock()
+_LOCK_COMPONENTS_COVERAGE_full = threading.Lock()
+_LOCK_JUNIT_partial = threading.Lock()
+_LOCK_JUNIT_full = threading.Lock()
+_LOCK_PIPELINES_partial = threading.Lock()
+_LOCK_PIPELINES_full = threading.Lock()
+_LOCK_JOBS_full = threading.Lock()
+_LOCK_JOBS_partial = threading.Lock()
 
 _LOCKS = {
-    "duration_cumulated": _LOCK_DURATION_CUMULATED,
-    "components_coverage": _LOCK_COMPONENTS_COVERAGE,
-    "junit": _LOCK_JUNIT,
-    "pipelines": _LOCK_PIPELINES,
-    "jobs": _LOCK_JOBS,
+    "duration_cumulated_partial": _LOCK_DURATION_CUMULATED_partial,
+    "duration_cumulated_full": _LOCK_DURATION_CUMULATED_full,
+    "components_coverage_partial": _LOCK_COMPONENTS_COVERAGE_partial,
+    "components_coverage_full": _LOCK_COMPONENTS_COVERAGE_full,
+    "junit_partial": _LOCK_JUNIT_partial,
+    "junit_full": _LOCK_JUNIT_full,
+    "pipelines_partial": _LOCK_PIPELINES_partial,
+    "pipelines_full": _LOCK_PIPELINES_full,
+    "jobs_partial": _LOCK_JOBS_partial,
+    "jobs_full": _LOCK_JOBS_full,
 }
 
 _VALID_SYNCHRONIZATION_TYPE = {"partial", "full"}
@@ -85,7 +95,8 @@ def _run_synchronization(name, synchronization_type):
         )
         synchronization_function = getattr(synchronizer, synchronization_type)
         logger.info(f"{name}: running {synchronization_type} synchronization")
-        return lock_and_run(_LOCKS[name], synchronization_function)
+        _lock_name = "%s_%s" % (name, synchronization_type)
+        return lock_and_run(_LOCKS[_lock_name], synchronization_function)
 
 
 def _get_request_json_key(key, default=None):

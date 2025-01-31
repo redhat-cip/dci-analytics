@@ -181,9 +181,9 @@ def process(job, api_conn):
     return job
 
 
-def _sync(unit, amount):
+def _sync(index, unit, amount):
     es.update_index(
-        "jobs",
+        index,
         json={
             "mappings": {
                 "dynamic_templates": [
@@ -236,10 +236,16 @@ def _sync(unit, amount):
 
 
 def partial(_lock_synchronization):
-    _sync("hours", 6)
+    latest_index_alias = es.get_latest_index_alias(_INDEX)
+    logger.debug(f"latest index alias: '{latest_index_alias}'")
+    _sync(latest_index_alias, "hours", 6)
     _lock_synchronization.release()
 
 
 def full(_lock_synchronization):
-    _sync("weeks", 52)
+    new_index_name = es.generate_new_index_name(_INDEX)
+    logger.debug(f"new index created: '{new_index_name}'")
+    _sync(new_index_name, "weeks", 52)
+    new_alias = es.add_alias_to_index(new_index_name)
+    logger.debug(f"new alias '{new_alias}' added for index: '{new_index_name}'")
     _lock_synchronization.release()

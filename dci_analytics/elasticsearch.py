@@ -15,6 +15,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from datetime import datetime as dt
 import logging
 
 import requests
@@ -92,3 +93,36 @@ def update_index(index, json):
         r = requests.put(index_url, json=json).json()
         if "acknowledged" not in r:
             logger.error(str(r))
+
+
+def get_latest_index_alias(index_prefix):
+    aliases_url = "%s/_cat/aliases?format=json" % _ES_URL
+    result = requests.get(aliases_url)
+    if result.status_code != 200:
+        logger.error("error while getting aliases: %s" % result.text)
+        return None
+    result = result.json()
+    if len(result) == 0:
+        logger.debug("no aliases found")
+        return None
+
+    aliases = [a["alias"] for a in result if a["alias"].startswith(index_prefix)]
+    aliases.sort()
+    return aliases[-1]
+
+
+def generate_new_index_name(index_prefix):
+    now_timestamp = dt.now().timestamp()
+    return f"{index_prefix}-{now_timestamp}"
+
+
+def generate_new_alias_name(alias_prefix):
+    now_iso_format = dt.now().isoformat()
+    now_iso_format = now_iso_format.replace(":", "-")
+    return f"{alias_prefix}-{now_iso_format}"
+
+
+def add_alias_to_index(alias_prefix, index_name):
+    alias_name = generate_new_alias_name(alias_prefix)
+    alias_actions = {"actions": [{"add": {"index": index_name, "alias": alias_name}}]}
+    requests.post(f"{_ES_URL}/_aliases", json=alias_actions)

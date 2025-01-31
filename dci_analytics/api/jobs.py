@@ -28,8 +28,15 @@ logger = logging.getLogger(__name__)
 
 @api.route("/jobs", strict_slashes=False, methods=["GET"])
 def get_jobs():
+    latest_index_alias = es.get_latest_index_alias("jobs")
+    if not latest_index_alias:
+        return flask.Response(
+            json.dumps({"message": "not alias for prefix index 'jobs' found"}),
+            status=400,
+            content_type="application/json",
+        )
     values = flask.request.json
-    _jobs = es.search_json("jobs", values)
+    _jobs = es.search_json(latest_index_alias, values)
 
     if "hits" not in _jobs:
         _jobs = {}
