@@ -170,14 +170,14 @@ def get_tests(files, api_conn):
     return tests
 
 
-def process(job, api_conn):
+def process(index, job, api_conn):
     _id = job["id"]
-    doc = es.get(_INDEX, _id)
+    doc = es.get(index, _id)
     job["tests"] = get_tests(job["files"], api_conn)
     if not doc:
-        es.push(_INDEX, job, _id)
+        es.push(index, job, _id)
     else:
-        es.update(_INDEX, job, _id)
+        es.update(index, job, _id)
     return job
 
 
@@ -195,7 +195,6 @@ def _sync(index, unit, amount):
                     }
                 ],
                 "properties": {
-                    "comment": {"type": "text"},
                     "components": {"type": "nested"},
                     "team": {"type": "nested"},
                     "topic": {"type": "nested"},
@@ -226,7 +225,7 @@ def _sync(index, unit, amount):
         for job in jobs:
             try:
                 logger.info("process job %s" % job["id"])
-                process(job, api_conn)
+                process(index, job, api_conn)
             except Exception as e:
                 logger.error(
                     "error while processing job '%s': %s" % (job["id"], str(e))
