@@ -17,6 +17,8 @@
 
 import logging
 
+import concurrent.futures
+
 from dci.analytics import access_data_layer as a_d_l
 from dci_analytics import elasticsearch as es
 from dci_analytics import dci_db
@@ -36,6 +38,7 @@ from datetime import timedelta
 logger = logging.getLogger(__name__)
 
 _INDEX = "jobs"
+_INDEX_JUNIT_CACHE = "_jobs_cache_junit"
 
 
 def parse_time(string_value):
@@ -81,16 +84,9 @@ def parse_testcase(testcase_xml):
             "system-err",
         ]:
             continue
-        text = testcase_child.text
-        if tag == "system-out":
-            testcase["stdout"] = text
-        elif tag == "system-err":
-            testcase["stderr"] = text
-        else:
-            testcase["action"] = tag
-            testcase["message"] = testcase_child.get("message", None)
-            testcase["type"] = testcase_child.get("type", None)
-            testcase["value"] = text
+        testcase["action"] = tag
+        testcase["message"] = testcase_child.get("message", None)
+        testcase["type"] = testcase_child.get("type", None)
         testcase_child.clear()
     return testcase
 
@@ -161,17 +157,37 @@ def get_tests(files, api_conn):
         if f["state"] != "active":
             continue
         if f["mime"] == "application/junit":
+            test = {"name": f["name"], "file_id": f["id"]}
             try:
                 file_content = get_file_content(api_conn, f)
                 file_descriptor = io.StringIO(file_content.decode("utf-8"))
-                tests.append(parse_junit(file_descriptor))
+                test["testsuites"] = parse_junit(file_descriptor)
+                tests.append(test)
             except Exception as e:
                 logger.error(f"Exception during sync: {e}")
     return tests
 
 
+def get_tests_from_cache(job_id):
+    doc = es.get(_INDEX_JUNIT_CACHE, job_id)
+    if doc:
+        return doc["tests"]
+    return
+
+
 def process(index, job, api_conn):
     _id = job["id"]
+    tests = get_tests_from_cache(_id)
+    if tests:
+        job["tests"] = tests
+    else:
+        job["tests"] = get_tests(job["files"], api_conn)
+        es.push(
+            _INDEX_JUNIT_CACHE,
+            {"created_at": job["created_at"], "tests": job["tests"]},
+            _id,
+        )
+
     doc = es.get(index, _id)
     job["tests"] = get_tests(job["files"], api_conn)
     if not doc:
@@ -201,7 +217,10 @@ def _sync(index, unit, amount):
                     "pipeline": {"type": "nested"},
                     "remoteci": {"type": "nested"},
                     "keys_values": {"type": "nested"},
-                    "tests": {"type": "nested"},
+                    "tests": {
+                        "type": "nested",
+                        "properties": {"testsuites": {"type": "nested"}},
+                    },
                 },
             }
         },
@@ -222,14 +241,18 @@ def _sync(index, unit, amount):
         jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
         if not jobs:
             break
-        for job in jobs:
-            try:
-                logger.info("process job %s" % job["id"])
-                process(index, job, api_conn)
-            except Exception as e:
-                logger.error(
-                    "error while processing job '%s': %s" % (job["id"], str(e))
-                )
+        futures = []
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            for job in jobs:
+                try:
+                    logger.info("process job %s" % job["id"])
+                    futures.append(executor.submit(process, job=job, api_conn=api_conn))
+                except Exception as e:
+                    logger.error(
+                        "error while processing job '%s': %s" % (job["id"], str(e))
+                    )
+            for _ in concurrent.futures.as_completed(futures):
+                pass
         offset += limit
     session_db.close()
 
