@@ -26,7 +26,7 @@ app = flask.Flask(__name__)
 
 
 logger = logging.getLogger()
-formatter = logging.Formatter("%(levelname)s - %(name)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s %(levelname)s - %(name)s - %(message)s")
 streamhandler = logging.StreamHandler()
 streamhandler.setFormatter(formatter)
 logger.addHandler(streamhandler)

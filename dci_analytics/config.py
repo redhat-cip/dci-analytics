@@ -30,7 +30,8 @@ def get_config():
         "POSTGRESQL_PORT": os.getenv("POSTGRESQL_PORT", "5432"),
         "POSTGRESQL_DATABASE": os.getenv("POSTGRESQL_DATABASE", "dci"),
         "DCI_LOGIN": os.getenv("DCI_LOGIN", "admin"),
-        "DCI_PASSWORD": os.getenv("DCI_PASSWORD", "admin"),
+        "DCI_CLIENT_ID": os.getenv("DCI_CLIENT_ID", ""),
+        "DCI_API_SECRET": os.getenv("DCI_API_SECRET", ""),
         "DCI_CS_URL": os.getenv("DCI_CS_URL", "http://api:5000"),
     }
 
