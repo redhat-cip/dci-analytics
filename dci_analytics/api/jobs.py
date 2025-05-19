@@ -31,7 +31,7 @@ def get_jobs():
     latest_index_alias = es.get_latest_index_alias("jobs")
     if not latest_index_alias:
         return flask.Response(
-            json.dumps({"message": "not alias for prefix index 'jobs' found"}),
+            json.dumps({"message": "no alias for prefix index 'jobs' found"}),
             status=400,
             content_type="application/json",
         )
@@ -47,6 +47,41 @@ def get_jobs():
 
     return flask.Response(
         json.dumps(_jobs),
+        status=200,
+        content_type="application/json",
+    )
+
+
+@api.route("/jobs/autocomplete", strict_slashes=False, methods=["GET"])
+def get_jobs_autocompletion():
+    latest_index_alias = es.get_latest_index_alias("jobs")
+    if not latest_index_alias:
+        return flask.Response(
+            json.dumps({"message": "no alias for prefix index 'jobs' found"}),
+            status=400,
+            content_type="application/json",
+        )
+    values = flask.request.json
+    if "field" not in values and "team_id" not in values:
+        return flask.Response(
+            json.dumps({"message": "'field' or 'team_id' parameters missing."}),
+            status=400,
+            content_type="application/json",
+        )
+    field = values["field"]
+    team_id = values["team_id"]
+    is_admin = False
+    if "is_admin" in values:
+        is_admin = values["is_admin"]
+    if "size" in values:
+        size = values["size"]
+
+    autocompletion_values = es.get_autocompletion_values(
+        latest_index_alias, team_id, field, is_admin, size
+    )
+
+    return flask.Response(
+        json.dumps(autocompletion_values),
         status=200,
         content_type="application/json",
     )

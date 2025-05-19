@@ -189,7 +189,6 @@ def process(index, job, api_conn):
         )
 
     doc = es.get(index, _id)
-    job["tests"] = get_tests(job["files"], api_conn)
     if not doc:
         es.push(index, job, _id)
     else:
@@ -217,6 +216,7 @@ def _sync(index, unit, amount):
                     "pipeline": {"type": "nested"},
                     "remoteci": {"type": "nested"},
                     "keys_values": {"type": "nested"},
+                    "product": {"type": "nested"},
                     "tests": {
                         "type": "nested",
                         "properties": {
