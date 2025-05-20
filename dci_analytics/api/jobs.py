@@ -70,11 +70,8 @@ def get_jobs_autocompletion():
         )
     field = values["field"]
     team_id = values["team_id"]
-    is_admin = False
-    if "is_admin" in values:
-        is_admin = values["is_admin"]
-    if "size" in values:
-        size = values["size"]
+    is_admin = values.get("is_admin", False)
+    size = values.get("size", 10)
 
     autocompletion_values = es.get_autocompletion_values(
         latest_index_alias, team_id, field, is_admin, size
