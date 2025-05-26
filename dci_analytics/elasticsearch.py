@@ -99,12 +99,39 @@ def init_index(index, json=None):
 
 
 def update_index(index, json):
+    is_index_created = False
     index_url = "%s/%s" % (_ES_URL, index)
     result = requests.get(index_url)
     if result.status_code != 200:
         r = requests.put(index_url, json=json).json()
         if "acknowledged" not in r:
             logger.error(str(r))
+        is_index_created = True
+    return is_index_created
+
+
+def update_index_meta(index, first_job_date=None, last_job_date=None):
+    url = "%s/%s/_mappings" % (_ES_URL, index)
+    logger.debug(f"url: {url}")
+    mappings = {"mappings": {"_meta": {}}}
+    if first_job_date:
+        mappings["mappings"]["_meta"]["first_sync_date"] = first_job_date
+    if last_job_date:
+        mappings["mappings"]["_meta"]["last_sync_date"] = last_job_date
+
+    res = requests.put(url, json=mappings)
+    if res.status_code != 201:
+        logger.debug("error while updating index %s meta: %s" % (index, res.text))
+
+
+def get_index_meta(index):
+    url = "%s/%s/_mappings" % (_ES_URL, index)
+    logger.debug(f"url: {url}")
+
+    res = requests.get(url)
+    if res.status_code != 200:
+        logger.error("error while getting index mapping of %s: %s" % (index, res.text))
+    return res.json()[index]["_mappings"]["_meta"]
 
 
 def get_latest_index_alias(index_prefix):

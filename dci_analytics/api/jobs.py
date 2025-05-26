@@ -45,6 +45,7 @@ def get_jobs():
     elif not _jobs["hits"]["hits"]:
         _jobs = {}
 
+    _jobs["_meta"] = es.get_index_meta(latest_index_alias)
     return flask.Response(
         json.dumps(_jobs),
         status=200,
