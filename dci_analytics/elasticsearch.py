@@ -114,12 +114,13 @@ def update_index_meta(index, first_job_date=None, last_job_date=None):
     url = "%s/%s/_mapping" % (_ES_URL, index)
     logger.debug(f"url: {url}")
     meta = get_index_meta(index)
+    meta = {"_meta": meta}
     if first_job_date:
         meta["_meta"]["first_sync_date"] = first_job_date
     if last_job_date:
         meta["_meta"]["last_sync_date"] = last_job_date
 
-    if meta["_meta"]:
+    if first_job_date or last_job_date:
         res = requests.put(url, json=meta)
         if res.status_code != 200:
             logger.debug("error while updating index %s meta: %s" % (index, res.text))
@@ -134,7 +135,9 @@ def get_index_meta(index):
         logger.error("error while getting index mapping of %s: %s" % (index, res.text))
     res = res.json()
     index_key = list(res.keys())[0]
-    return res[index_key]["mappings"]["_meta"]
+    if "_meta" in res[index_key]["mappings"]:
+        return res[index_key]["mappings"]["_meta"]
+    return {}
 
 
 def get_latest_index_alias(index_prefix):
