@@ -75,13 +75,7 @@ def parse_testcase(testcase_xml):
     }
     for testcase_child in testcase_xml:
         tag = testcase_child.tag
-        if tag not in [
-            "skipped",
-            "error",
-            "failure",
-            "system-out",
-            "system-err",
-        ]:
+        if tag not in ["skipped", "error", "failure"]:
             continue
         testcase["action"] = tag
         testcase["message"] = testcase_child.get("message", None)
@@ -244,27 +238,9 @@ def _sync(index, unit, amount):
     last_job = None
 
     if is_index_created:
-        jobs = es.search_json(
-            index,
-            json={
-                "from": 0,
-                "size": 1,
-                "sort": [
-                    {
-                        "created_at": {
-                            "order": "asc",
-                            "format": "strict_date_optional_time_nanos",
-                        }
-                    }
-                ],
-                "_source": {"include": ["created_at"]},
-            },
-        )
-        if "hits" in jobs and "hits" in jobs["hits"]:
-            jobs = jobs["hits"]["hits"]
-            if len(jobs) > 0:
-                first_job_date = jobs[0]["_source"]["created_at"]
-                es.update_index_meta(index, first_job_date=first_job_date)
+        jobs = a_d_l.get_jobs(session_db, 0, 1, unit=unit, amount=amount)
+        if len(jobs) > 0:
+            es.update_index_meta(index, first_job_date=jobs[0]["created_at"])
 
     while True:
         jobs = a_d_l.get_jobs(session_db, offset, limit, unit=unit, amount=amount)
@@ -290,7 +266,7 @@ def _sync(index, unit, amount):
         offset += limit
 
     if last_job:
-        es.update_index_meta(index, last_job_date=last_job["created_at"])
+        es.update_index_meta(index, last_job_date=last_job["updated_at"])
     session_db.close()
 
 
