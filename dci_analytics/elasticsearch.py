@@ -171,3 +171,4 @@ def add_alias_to_index(alias_prefix, index_name):
     alias_name = generate_new_alias_name(alias_prefix)
     alias_actions = {"actions": [{"add": {"index": index_name, "alias": alias_name}}]}
     requests.post(f"{_ES_URL}/_aliases", json=alias_actions)
+    return alias_name
