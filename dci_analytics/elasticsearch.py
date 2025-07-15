@@ -75,15 +75,33 @@ def update(index, data, doc_id):
 
 
 def get_autocompletion_values(index, team_id, field, is_admin=False, size=10):
-    query = {
-        "aggs": {"autocomplete": {"terms": {"field": field, "size": size}}},
-        "size": 0,
-    }
+    if "." in field:
+        path = field.split(".")[0]
+        query = {
+            "aggs": {
+                "autocomplete": {
+                    "nested": {"path": path},
+                    "aggs": {"autocomplete": {"terms": {"field": field, "size": size}}},
+                },
+            },
+            "size": 0,
+        }
+    else:
+        query = {
+            "aggs": {"autocomplete": {"terms": {"field": field, "size": size}}},
+            "size": 0,
+        }
     if not is_admin:
         query["query"] = {"term": {"team_id": team_id}}
 
     res = search_json(index, query)
-    return [f["key"] for f in res["aggregations"]["autocomplete"]["buckets"]]
+    if "." in field:
+        return [
+            f["key"]
+            for f in res["aggregations"]["autocomplete"]["autocomplete"]["buckets"]
+        ]
+    else:
+        return [f["key"] for f in res["aggregations"]["autocomplete"]["buckets"]]
 
 
 def init_index(index, json=None):
