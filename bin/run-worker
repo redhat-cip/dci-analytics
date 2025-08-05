@@ -58,8 +58,17 @@ class Worker(ConsumerMixin):
 
 if __name__ == '__main__':
 
-    exchange = Exchange("dci.analytics.exchange", type="direct")
-    queues = [Queue("dci.analytics.queue", exchange, routing_key="dci.analytics.jobs")]
+    exchange_name = "dci.analytics.exchange"
+    exchange_type = "direct"
+    queue_name = "dci.analytics.queue"
+    routing_key = "dci.analytics.jobs"
+
+    exchange = Exchange(exchange_name, type=exchange_type)
+    queues = [Queue(queue_name, exchange, routing_key=routing_key)]
+
+    print("worker waiting for messages\n")
+    print("exchange: {exchange_name}, type: {exchange_type}\n")
+    print("queue: {queue_name}, routing_key: {routing_key}\n")
 
     with Connection(amqp_broker_url, heartbeat=4) as conn:
             worker = Worker(conn, queues)
