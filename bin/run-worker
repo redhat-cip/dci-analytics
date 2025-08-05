@@ -22,11 +22,40 @@ from dci_analytics.synchronizers import jobs
 from kombu import Connection, Exchange, Queue
 from kombu.mixins import ConsumerMixin
 
+import logging
 import os
+import sys
 
 _INDEX = "jobs"
 
-amqp_broker_url = os.getenv("AMQP_BROKER_URL", "amqp://guest:guest@rabbitmq:5672//")
+AMQP_BROKER_URL = os.getenv("AMQP_BROKER_URL", "amqp://guest:guest@rabbitmq:5672//")
+LOGGING_LEVEL = logging.INFO
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(LOGGING_LEVEL)
+    console_handler.setFormatter(formatter)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(LOGGING_LEVEL)
+    root_logger.handlers.clear()
+    root_logger.addHandler(console_handler)
+
+    kombu_logger = logging.getLogger("kombu")
+    kombu_logger.setLevel(LOGGING_LEVEL)
+    kombu_logger.handlers.clear()
+    kombu_logger.addHandler(console_handler)
+
+    kombu_transport_logger = logging.getLogger("kombu.transport")
+    kombu_transport_logger.setLevel(LOGGING_LEVEL)
+    kombu_transport_logger.handlers.clear()
+    kombu_transport_logger.addHandler(console_handler)
 
 
 class Worker(ConsumerMixin):
@@ -40,23 +69,25 @@ class Worker(ConsumerMixin):
 
     def on_message(self, body, message):
         event = body["event"]
-        job = body["job"]
-        print("Handle job event %s: job_id %s" % (event, job["id"]), flush=True)
+        job_id = body["job"]["id"]
+        logging.info(f"Handle job event {event}: job_id {job_id}")
 
         latest_index_alias = es.get_latest_index_alias(_INDEX)
-        print(f"latest_index_alias: {latest_index_alias}", flush=True)
+        logging.info(f"latest_index_alias: {latest_index_alias}")
         if latest_index_alias:
              jobs.sync_one_job(latest_index_alias, body["job"])
         else:
              new_index_name = es.generate_new_index_name(_INDEX)
-             print(f"new index created: '{new_index_name}'", flush=True)
+             logging.info(f"new index created: '{new_index_name}'")
              jobs.sync_one_job(new_index_name, body["job"])
              new_alias = es.add_alias_to_index("jobs", new_index_name)
-             print(f"new alias '{new_alias}' added for index: '{new_index_name}'", flush=True)
+             logging.info(f"new alias '{new_alias}' added for index: '{new_index_name}'")
         message.ack()
 
 
 if __name__ == '__main__':
+
+    setup_logging()
 
     exchange_name = "dci.analytics.exchange"
     exchange_type = "direct"
@@ -66,10 +97,10 @@ if __name__ == '__main__':
     exchange = Exchange(exchange_name, type=exchange_type)
     queues = [Queue(queue_name, exchange, routing_key=routing_key)]
 
-    print("worker waiting for messages\n")
-    print("exchange: {exchange_name}, type: {exchange_type}\n")
-    print("queue: {queue_name}, routing_key: {routing_key}\n")
+    logging.info("worker waiting for messages")
+    logging.info(f"exchange: {exchange_name}, type: {exchange_type}")
+    logging.info(f"queue: {queue_name}, routing_key: {routing_key}")
 
-    with Connection(amqp_broker_url, heartbeat=4) as conn:
+    with Connection(AMQP_BROKER_URL, heartbeat=4) as conn:
             worker = Worker(conn, queues)
             worker.run()
