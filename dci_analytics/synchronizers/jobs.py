@@ -140,8 +140,9 @@ def parse_junit(file_descriptor):
 
 
 def get_file_content(api_conn, f_id):
-    uri = "https://api.distributed-ci.io/api/v2/files/%s/content" % f_id
-    r = api_conn.session.get(uri)
+    _config = config.CONFIG
+    api_url = _config["DCI_CS_URL"]
+    r = api_conn.session.get(f"{api_url}/api/v2/files/{f_id}/content")
     return r.content
 
 
@@ -190,8 +191,8 @@ def process(index, job, api_conn):
     return job
 
 
-def _sync(index, unit, amount):
-    is_index_created = es.update_index(
+def update_index(index):
+    return es.update_index(
         index,
         json={
             "mappings": {
@@ -225,12 +226,29 @@ def _sync(index, unit, amount):
         },
     )
 
-    _config = config.get_config()
-    api_conn = context.build_signature_context(
-        dci_cs_url=_config["DCI_CS_URL"],
-        dci_client_id=_config["DCI_CLIENT_ID"],
-        dci_api_secret=_config["DCI_API_SECRET"],
-    )
+
+def _get_api_connection():
+    _config = config.CONFIG
+    if _config["DCI_CLIENT_ID"] and _config["DCI_API_SECRET"]:
+        return context.build_signature_context(
+            dci_cs_url=_config["DCI_CS_URL"],
+            dci_client_id=_config["DCI_CLIENT_ID"],
+            dci_api_secret=_config["DCI_API_SECRET"],
+        )
+    elif _config["DCI_LOGIN"] and _config["DCI_PASSWORD"]:
+        return context.build_dci_context(
+            dci_cs_url=_config["DCI_CS_URL"],
+            dci_login=_config["DCI_LOGIN"],
+            dci_password=_config["DCI_PASSWORD"],
+        )
+    else:
+        logger.error("no credentials found for the api")
+
+
+def _sync(index, unit, amount):
+
+    is_index_created = update_index(index)
+    api_conn = _get_api_connection()
 
     session_db = dci_db.get_session_db()
     limit = 100
@@ -268,6 +286,19 @@ def _sync(index, unit, amount):
     if last_job:
         es.update_index_meta(index, last_job_date=last_job["updated_at"])
     session_db.close()
+
+
+def sync_one_job(index, job):
+
+    is_index_created = update_index(index)
+    api_conn = _get_api_connection()
+
+    if is_index_created:
+        es.update_index_meta(index, first_job_date=job["created_at"])
+
+    process(index, job, api_conn)
+
+    es.update_index_meta(index, last_job_date=job["updated_at"])
 
 
 def partial(_lock_synchronization):

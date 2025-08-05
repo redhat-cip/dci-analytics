@@ -1,5 +1,6 @@
 dciclient
 flask
+kombu
 lxml
 requests
 pandas
