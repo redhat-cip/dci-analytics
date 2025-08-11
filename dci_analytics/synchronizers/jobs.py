@@ -174,14 +174,15 @@ def get_tests_from_cache(job_id):
 def get_tests(job, api_conn):
     tests = get_tests_from_cache(job["id"])
     if tests:
-        job["tests"] = tests
+        return tests
     else:
-        job["tests"] = get_tests_from_api(job["files"], api_conn)
+        tests = get_tests_from_api(job["files"], api_conn)
         es.push(
             _INDEX_JUNIT_CACHE,
             {"created_at": job["created_at"], "tests": job["tests"]},
             job["id"],
         )
+    return tests
 
 
 def parse_json(file_content):
