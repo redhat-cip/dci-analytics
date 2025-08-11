@@ -15,6 +15,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import json
 import logging
 
 import concurrent.futures
@@ -146,7 +147,7 @@ def get_file_content(api_conn, f_id):
     return r.content
 
 
-def get_tests(files, api_conn):
+def get_tests_from_api(files, api_conn):
     tests = []
     for f in files:
         if f["state"] != "active":
@@ -170,18 +171,53 @@ def get_tests_from_cache(job_id):
     return
 
 
-def process(index, job, api_conn):
-    _id = job["id"]
-    tests = get_tests_from_cache(_id)
+def get_tests(job, api_conn):
+    tests = get_tests_from_cache(job["id"])
     if tests:
         job["tests"] = tests
     else:
-        job["tests"] = get_tests(job["files"], api_conn)
+        job["tests"] = get_tests_from_api(job["files"], api_conn)
         es.push(
             _INDEX_JUNIT_CACHE,
             {"created_at": job["created_at"], "tests": job["tests"]},
-            _id,
+            job["id"],
         )
+
+
+def parse_json(file_content):
+    return json.loads(file_content)
+
+
+def get_extra_data(job, api_conn):
+    extra = {}
+    for f in job["files"]:
+        if f["state"] != "active":
+            continue
+        if f["mime"] == "application/dci-analytics+json":
+            try:
+                file_content = get_file_content(api_conn, f["id"])
+                file_json = parse_json(file_content)
+
+                current = extra
+                path = f["name"].split(".")
+                if f["name"].startswith("dci-extra."):
+                    path = path[1:]
+                if f["name"].endswith(".json"):
+                    path = path[:-1]
+                for i in path:
+                    if i not in current:
+                        current[i] = {}
+                    current = current[i]
+                current.update(file_json)
+            except Exception as e:
+                logger.error(f"Exception during sync: {e}")
+    return extra
+
+
+def process(index, job, api_conn):
+    _id = job["id"]
+    job["tests"] = get_tests(job, api_conn)
+    job["extra"] = get_extra_data(job, api_conn)
 
     doc = es.get(index, _id)
     if not doc:
@@ -221,6 +257,7 @@ def update_index(index):
                             }
                         },
                     },
+                    "extra": {"type": "object"},
                 },
             }
         },
