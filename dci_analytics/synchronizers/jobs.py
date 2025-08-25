@@ -179,7 +179,7 @@ def get_tests(job, api_conn):
         tests = get_tests_from_api(job["files"], api_conn)
         es.push(
             _INDEX_JUNIT_CACHE,
-            {"created_at": job["created_at"], "tests": job["tests"]},
+            {"created_at": job["created_at"], "tests": tests},
             job["id"],
         )
     return tests
