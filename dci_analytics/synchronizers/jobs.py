@@ -190,7 +190,7 @@ def parse_json(file_content):
 
 
 def get_extra_data(job, api_conn):
-    extra = {}
+    extra = []
     for f in job["files"]:
         if f["state"] != "active":
             continue
@@ -198,20 +198,9 @@ def get_extra_data(job, api_conn):
             try:
                 file_content = get_file_content(api_conn, f["id"])
                 file_json = parse_json(file_content)
-
-                current = extra
-                path = f["name"].split(".")
-                if f["name"].startswith("dci-extra."):
-                    path = path[1:]
-                if f["name"].endswith(".json"):
-                    path = path[:-1]
-                for i in path:
-                    if i not in current:
-                        current[i] = {}
-                    current = current[i]
-                current.update(file_json)
+                extra.append(file_json)
             except Exception as e:
-                logger.error(f"Exception during sync: {e}")
+                logger.error(f"Exception during getting extra data: {e}")
     return extra
 
 
@@ -239,6 +228,11 @@ def update_index(index):
                             "match_mapping_type": "string",
                             "mapping": {"type": "keyword"},
                         },
+                        "extra_to_nested": {
+                            "path_match": "extra.*",
+                            "match_mapping_type": "object",
+                            "mapping": {"type": "nested"},
+                        },
                     }
                 ],
                 "properties": {
@@ -258,7 +252,7 @@ def update_index(index):
                             }
                         },
                     },
-                    "extra": {"type": "object"},
+                    "extra": {"type": "nested"},
                 },
             }
         },
