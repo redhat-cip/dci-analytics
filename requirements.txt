@@ -5,6 +5,8 @@ lxml
 requests
 pandas
 gunicorn
+psycopg2==2.7.5;python_version<="3.6"
+psycopg2-binary;python_version>"3.6"
 SQLAlchemy
 SQLAlchemy-Utils
 urllib3
