@@ -185,8 +185,26 @@ def get_tests(job, api_conn):
     return tests
 
 
+def clean_doted_keys(json_content):
+    res = {}
+    if isinstance(json_content, dict):
+        for k, v in json_content.items():
+            if "." in k:
+                if isinstance(v, dict) or isinstance(v, list):
+                    res[k.replace(".", "_")] = clean_doted_keys(v)
+                else:
+                    res[k.replace(".", "_")] = v
+            else:
+                res[k] = v
+    elif isinstance(json_content, list):
+        res = [clean_doted_keys(d) for d in json_content]
+
+    return res
+
+
 def parse_json(file_content):
-    return json.loads(file_content)
+    json_content = json.loads(file_content)
+    return clean_doted_keys(json_content)
 
 
 def get_extra_data(job, api_conn):
@@ -227,13 +245,15 @@ def update_index(index):
                         "strings_as_keyword": {
                             "match_mapping_type": "string",
                             "mapping": {"type": "keyword"},
-                        },
+                        }
+                    },
+                    {
                         "extra_to_nested": {
                             "path_match": "extra.*",
                             "match_mapping_type": "object",
                             "mapping": {"type": "nested"},
                         },
-                    }
+                    },
                 ],
                 "properties": {
                     "components": {"type": "nested"},
@@ -254,7 +274,11 @@ def update_index(index):
                     },
                     "extra": {"type": "nested"},
                 },
-            }
+            },
+            "settings": {
+                "index.mapping.nested_objects.limit": 300000,
+                "index.mapping.total_fields.limit": 20000,
+            },
         },
     )
 

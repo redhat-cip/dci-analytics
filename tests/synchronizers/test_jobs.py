@@ -32,3 +32,20 @@ def test_get_tests(m_es_push, m_gtfa, m_gtfc):
         jobs._INDEX_JUNIT_CACHE, {"created_at": "created_at", "tests": ["tests"]}, "id"
     )
     assert tests == ["tests"]
+
+
+def test_clean_doted_keys():
+    t1 = {"a": "b"}
+    assert jobs.clean_doted_keys(t1) == {"a": "b"}
+
+    t2 = {"a.b": "c", "d.f": [{"c.v": "d"}, {"m.d": "ok"}]}
+    assert jobs.clean_doted_keys(t2) == {
+        "a_b": "c",
+        "d_f": [{"c_v": "d"}, {"m_d": "ok"}],
+    }
+
+    t3 = {"a.b": "c", "d.f": [{"c.v": [{"lol.lol": "mdr.mdr"}]}, {"m.d": "ok"}]}
+    assert jobs.clean_doted_keys(t3) == {
+        "a_b": "c",
+        "d_f": [{"c_v": [{"lol_lol": "mdr.mdr"}]}, {"m_d": "ok"}],
+    }
