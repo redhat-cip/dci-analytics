@@ -190,14 +190,13 @@ def clean_doted_keys(json_content):
     if isinstance(json_content, dict):
         for k, v in json_content.items():
             if "." in k:
-                if isinstance(v, dict) or isinstance(v, list):
-                    res[k.replace(".", "_")] = clean_doted_keys(v)
-                else:
-                    res[k.replace(".", "_")] = v
+                res[k.replace(".", "_")] = clean_doted_keys(v)
             else:
-                res[k] = v
+                res[k] = clean_doted_keys(v)
     elif isinstance(json_content, list):
         res = [clean_doted_keys(d) for d in json_content]
+    else:
+        return json_content
 
     return res
 
